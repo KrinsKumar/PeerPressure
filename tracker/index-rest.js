@@ -85,11 +85,7 @@ app.post("/files/:id/chunks", async (req, res) => {
   let chunks;
   console.log("Adding chunks", fileHash);
   try {
-    chunks = req.body.chunk;
-    console.log(chunks);
-    // chunks["fileId"] = chunks.chunk;
-    chunks[fileHash] = fileHash["fileId"];
-    delete chunks["fileHash"];
+    chunks = req.body.chunk["fileId"];
     console.log(chunks);
   } catch (e) {
     res.status(400).send("Please provide all the fields");
@@ -119,9 +115,7 @@ app.post("/files/:id/chunks", async (req, res) => {
 app.get("/files/:id/chunks", async (req, res) => {
   let fileId = req.params.id;
   const files = await getFileChunks(client, fileId);
-  console.log("Getting chunks", fileId, files);
-  let chunks = files[fileId];
-  res.json({ fileId, chunks });
+  res.json(files);
 });
 
 // // add all the chunks that a file has
