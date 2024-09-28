@@ -285,7 +285,7 @@ class Worker {
 }
 
 // Create and start the worker
-const port = process.argv[2] || 3001; 
+const port = process.argv[2] || 3000; 
 const trackerAddress = process.env.TRACKER_ADDRESS || 'http://localhost:3000';
 const worker = new Worker(port, trackerAddress);
 worker.cli();

@@ -14,5 +14,5 @@ if len(ports) < 1:
 
 for port in ports:
     print(f"starting on port {port}...")
-    subprocess.run(["docker", "run", "-p", f"{port}:3001", "-dit", IMAGE])
+    subprocess.run(["docker", "run", "-p", f"{port}:3000", "-dit", IMAGE])
 
