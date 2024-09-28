@@ -7,6 +7,10 @@ import {
   getFileId,
   getFileChunks,
   addFileChunks,
+  addWorkerChunk,
+  getWorkerChunks,
+  getChunkNodes,
+  addChunkNode,
 } from "./database.js";
 
 const app = express();
@@ -83,6 +87,48 @@ app.get("/files/:id/chunks", async (req, res) => {
   let fileId = req.params.id;
   let chunks = await getFileChunks(client, fileId);
   res.json({ fileId, chunks });
+});
+
+// add all the node chunks to a node
+app.post("/worker/:id/chunks", async (req, res) => {
+  let workerId = req.params.id;
+  let chunks;
+  try {
+    chunks = req.body;
+  } catch (e) {
+    res.status(400).send("Please provide all the fields");
+    return;
+  }
+  await addWorkerChunk(client, workerId, chunks);
+  res.json({ workerId, chunks });
+});
+
+// get all the chunks of a node
+app.get("/worker/:id/chunks", async (req, res) => {
+  let nodeId = req.params.id;
+  let chunks = await getWorkerChunks(client, nodeId);
+  res.json({ nodeId, chunks });
+});
+
+// get all nodes in a chunk
+app.get("/chunk/:id", async (req, res) => {
+  let chunkId = req.params.id;
+  let nodes = await getChunkNodes(client, chunkId);
+  res.json({ chunkId, nodes });
+});
+
+// add a node to a chunk
+app.post("/chunk/:id", async (req, res) => {
+  let chunkId = req.params.id;
+  let nodeId;
+  try {
+    nodeId = req.body.nodeId;
+  } catch (e) {
+    res.status(400).send("Please provide all the fields");
+    return;
+  }
+  await addChunkNode(client, chunkId, nodeId);
+  res.json({ chunkId, nodeId });
 });
 
 // make the final 404 route

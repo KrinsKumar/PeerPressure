@@ -94,3 +94,43 @@ export async function getFileChunks(client, fileHash) {
   let fileChunks = JSON.parse(value);
   return fileChunks[fileHash];
 }
+
+// add a new chunk to a node
+export async function addWorkerChunk(client, nodeId, chunkId) {
+  console.log("Adding node chunk", nodeId, chunkId);
+  let value = await client.get(prefix.nodeChunks);
+  let nodeChunks = JSON.parse(value);
+  nodeChunks = nodeChunks || {};
+  nodeChunks[nodeId] = nodeChunks[nodeId] || [];
+  nodeChunks[nodeId].push(chunkId);
+  console.log(nodeChunks);
+  client.set(prefix.nodeChunks, JSON.stringify(nodeChunks));
+  return true;
+}
+
+// get all the chunks of a node
+export async function getWorkerChunks(client, nodeId) {
+  let value = await client.get(prefix.nodeChunks);
+  let nodeChunks = JSON.parse(value);
+  return nodeChunks[nodeId];
+}
+
+// add a node to a chunk
+export async function addChunkNode(client, chunkId, nodeId) {
+  console.log("Adding chunk node", chunkId, nodeId);
+  let value = await client.get(prefix.chunkNodes);
+  let chunkNodes = JSON.parse(value);
+  chunkNodes = chunkNodes || {};
+  chunkNodes[chunkId] = chunkNodes[chunkId] || [];
+  chunkNodes[chunkId].push(nodeId);
+  console.log(chunkNodes);
+  client.set(prefix.chunkNodes, JSON.stringify(chunkNodes));
+  return true;
+}
+
+// get all the nodes of a chunk
+export async function getChunkNodes(client, chunkId) {
+  let value = await client.get(prefix.chunkNodes);
+  let chunkNodes = JSON.parse(value);
+  return chunkNodes[chunkId];
+}
