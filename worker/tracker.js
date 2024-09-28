@@ -5,9 +5,9 @@ class Tracker {
   constructor(port) {
     this.port = port;
     this.server = io(port);
-    this.nodes = new Map();
-    this.fileChunks = new Map();
-    this.files = new Map(); 
+    this.nodes = new Map(); // Keep tracks of the active nodes:  socketId, { address, port }
+    this.fileChunks = new Map(); // Keep tracks of the chunks: fileId, { chunkId, [workerId] }
+    this.files = new Map(); // Keep tracks of the files: fileId, { fileName, fileSize }
     this.setupEventListeners();
     console.log(`Tracker started on port ${port}`);
   }
@@ -53,6 +53,7 @@ class Tracker {
 
       socket.on('list_files', (callback) => {
         console.log('Listing files: ', this.files);
+        // TODO: fix this as it's returning 0 id
         callback(Array.from(this.files.values()));
       });
 

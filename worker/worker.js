@@ -42,6 +42,7 @@ class Worker {
     });
   }
 
+  // We store the chunk in the node's memory
   storeChunk(fileId, chunkId, chunk) {
     if (!this.chunks.has(fileId)) {
       this.chunks.set(fileId, new Map());
@@ -157,6 +158,7 @@ class Worker {
   }
 
   verifyFileIntegrity(fileContent, fileId) {
+    
     const hash = crypto.createHash('sha256').update(fileContent).digest('hex');
     console.log(`File integrity check:
       File ID: ${fileId}
@@ -206,7 +208,7 @@ class Worker {
 
   listStoredFiles() {
     this.trackerSocket.emit('list_files', (files) => {
-      console.log('Stored files:');
+      console.log('Stored files:', files);
       files.forEach((file, fileId) => {
         console.log(`File ID: ${fileId}, Name: ${file.fileName}, Size: ${file.fileSize} bytes`);
       });
