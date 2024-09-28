@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+
+import subprocess
+
+
+IMAGE = "hack-the-hill-tracker"
+
+containers = subprocess.run(["docker", "container", "ls"], capture_output=True, text=True).stdout
+containers = containers.split("\n")
+containers = containers[1:]
+containers = [l.split() for l in containers]
+containers = [c for c in containers if c]
+
+for container in containers:
+    hash_ = container[0]
+    image = container[1]
+    if image == IMAGE:
+        subprocess.run(["docker", "container", "stop", hash_], stdout=subprocess.DEVNULL)
+        subprocess.run(["docker", "container", "rm", hash_])
+

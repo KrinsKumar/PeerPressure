@@ -2,10 +2,10 @@
   "name": "nodes",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "start": "ts-node worker.ts"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +18,7 @@
   },
   "packageManager": "pnpm@9.1.2+sha1.907f57a52517de34399d66401bf220a549e47b57",
   "devDependencies": {
+    "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   }
 }

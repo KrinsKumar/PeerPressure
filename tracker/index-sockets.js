@@ -121,6 +121,5 @@ class Tracker {
   }
 }
 
-// Create and start the tracker
 const port = 3000;
 const tracker = new Tracker(port);
