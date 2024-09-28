@@ -6,7 +6,8 @@ const readline = require('readline');
 const path = require('path');
 
 class Worker {
-  constructor(port, trackerAddress) {
+  constructor(host, port, trackerAddress) {
+    this.host = host
     this.port = port;
     this.server = io(port);
     this.trackerSocket = ioClient(trackerAddress);
@@ -36,7 +37,7 @@ class Worker {
 
     this.trackerSocket.on('connect', () => {
       this.trackerSocket.emit('register_worker', {
-        address: 'localhost',
+        host: this.host,
         port: this.port
       });
     });
@@ -72,7 +73,7 @@ class Worker {
       const targetWorkers = this.selectRandomWorkers(activeWorkers, replicationFactor);
       for (const worker of targetWorkers) {
         // TODO: This creates a new socket for each chunk, which is not efficient
-        const workerSocket = ioClient(`http://${worker.address}:${worker.port}`);
+        const workerSocket = ioClient(`http://${worker.host}:${worker.port}`);
         await new Promise((resolve) => {
           workerSocket.emit('store_chunk', {
             fileId,
@@ -128,7 +129,7 @@ class Worker {
       // Attempt to retrieve the chunk from the first available location
       const chunk = await new Promise((resolve) => {
         // TODO: This creates a new socket for each chunk, which is not efficient
-        const nodeSocket = ioClient(`http://${locations[0].address}:${locations[0].port}`);
+        const nodeSocket = ioClient(`http://${locations[0].host}:${locations[0].port}`);
         nodeSocket.emit('retrieve_chunk', { fileId, chunkId }, (chunk) => {
           resolve(chunk);
         });
@@ -284,9 +285,10 @@ class Worker {
 }
 
 // Create and start the worker
-const port = process.env.WORKER_PORT || 3000; 
-const trackerAddress = `http://${process.env.TRACKER_HOST}:${process.env.TRACKER_PORT}` || 'http://localhost:3000';
-console.log(`Connecting to tracker at ${trackerAddress}...`)
-const worker = new Worker(port, trackerAddress);
+const WORKER_HOST = process.env.WORKER_HOST || localhost;
+const WORKER_PORT = process.env.WORKER_PORT || 3000; 
+const TRACKER_ADDRESS = `http://${process.env.TRACKER_HOST}:${process.env.TRACKER_PORT}` || 'http://localhost:3000';
+console.log(`Connecting to tracker at ${TRACKER_ADDRESS}...`)
+const worker = new Worker(WORKER_HOST, WORKER_PORT, TRACKER_ADDRESS);
 worker.cli();
 

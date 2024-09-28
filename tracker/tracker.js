@@ -5,7 +5,7 @@ class Tracker {
   constructor(port) {
     this.port = port;
     this.server = io(port);
-    this.nodes = new Map(); // Keep tracks of the active nodes:  socketId, { address, port }
+    this.nodes = new Map(); // Keep tracks of the active nodes:  socketId, { host, port }
     this.fileChunks = new Map(); // Keep tracks of the chunks: fileId, { chunkId, [workerId] }
     this.files = new Map(); // Keep tracks of the files: fileId, { fileName, fileSize }
     this.setupEventListeners();
@@ -17,7 +17,7 @@ class Tracker {
       console.log('New worker connected to tracker');
 
       socket.on('register_worker', (data) => {
-        this.registerWorker(socket.id, data.address, data.port);
+        this.registerWorker(socket.id, data.host, data.port);
       });
 
       socket.on('disconnect', () => {
@@ -60,9 +60,9 @@ class Tracker {
     });
   }
 
-  registerWorker(socketId, address, port) {
-    this.nodes.set(socketId, { address, port });
-    console.log(`Registered worker: ${address}:${port}`);
+  registerWorker(socketId, host, port) {
+    this.nodes.set(socketId, { host, port });
+    console.log(`Registered worker: ${host}:${port}`);
   }
 
   removeWorker(socketId) {
