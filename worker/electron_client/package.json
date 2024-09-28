@@ -1,0 +1,11 @@
+{
+  "name": "my-electron-app",
+  "version": "1.0.0",
+  "description": "Node Worker Client",
+  "main": "main.js",
+  "author": "David Pietrocola",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^32.1.2"
+  }
+}
