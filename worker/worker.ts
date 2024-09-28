@@ -38,7 +38,6 @@ class Worker {
     private setupEventListeners() {
         this.server.on('connection', (socket) => {
             console.log(`New connection on port ${this.port}`);
-
             socket.on('store_chunk', (data: ChunkData, callback: (response: { success: boolean }) => void) => {
                 this.storeChunk(data.fileId, data.chunkId, data.chunk);
                 this.trackerSocket.emit('store_chunk_info', {
@@ -195,14 +194,6 @@ class Worker {
     `);
     }
 
-    private getActiveNodes(): Promise<any[]> {
-        return new Promise((resolve) => {
-            this.trackerSocket.emit('get_active_nodes', (nodes: any[]) => {
-                resolve(nodes);
-            });
-        });
-    }
-
     private getChunkLocations(fileId: string, chunkId: number): Promise<WorkerInfo[]> {
         return new Promise((resolve) => {
             this.trackerSocket.emit('get_chunk_locations', { fileId, chunkId }, (locations: WorkerInfo[]) => {
@@ -217,11 +208,6 @@ class Worker {
                 resolve(chunks);
             });
         });
-    }
-
-    private selectRandomNodes(nodes: any[], count: number): any[] {
-        const shuffled = nodes.sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, count);
     }
 
     private listStoredChunks() {
