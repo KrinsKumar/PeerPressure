@@ -7,7 +7,7 @@ class Tracker {
     this.server = io(port);
     this.nodes = new Map();
     this.fileChunks = new Map();
-    this.files = new Map();
+    this.files = new Map(); 
     this.setupEventListeners();
     console.log(`Tracker started on port ${port}`);
   }
@@ -88,6 +88,10 @@ class Tracker {
   retrieveChunk(fileId, chunkId, callback) {
     const chunkLocations = this.getChunkLocations(fileId, chunkId);
     callback(chunkLocations);
+  }
+
+  storeFile(fileId, fileName, fileSize) {
+    this.files.set(fileId, { fileName, fileSize });
   }
 }
 

@@ -11,7 +11,6 @@ class Worker {
     this.server = io(port);
     this.trackerSocket = ioClient(trackerAddress);
     this.chunks = new Map();
-    this.files = new Map(); // TODO: move to tracker
     this.setupEventListeners();
     console.log(`Worker started on port ${port}`);
   }
@@ -89,6 +88,13 @@ class Worker {
         });
       }
     }
+
+    // Add file to tracker
+    this.trackerSocket.emit('store_file', {
+      fileId,
+      fileName: path.basename(filePath),
+      fileSize: fileContent.length
+    });
  
 
     console.log(`File uploaded with ID: ${fileId}`);
