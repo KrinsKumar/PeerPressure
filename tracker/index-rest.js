@@ -2,6 +2,7 @@ import express from "express";
 import { createClient } from "redis";
 import { addFileChunks, getFileChunks } from "./database.js";
 import cors from "cors";
+import readline from "readline"; // CLI integration
 
 const app = express();
 app.use(cors());
@@ -196,6 +197,14 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+
+console.log("Tracker CLI:");
+console.log("Available commands:");
+console.log("- 1: Fetch all workers");
+console.log("- 2: Fetch all files");
+console.log("- 3: Fetch chunks for a file");
+console.log("- 4: Exit");
+
 
 rl.on("line", async (input) => {
   const [command] = input.trim().split(" ");
