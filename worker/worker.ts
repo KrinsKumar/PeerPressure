@@ -370,25 +370,42 @@ class Worker {
             input: process.stdin,
             output: process.stdout,
         });
-
         console.log(`Worker CLI (Port ${this.port}):`);
         console.log("Available commands:");
-        console.log("- upload <file_path>: Upload a file");
-        console.log("- download <file_id> <output_path>: Download a file");
-        console.log("- list_chunks: List all stored chunks");
-        console.log("- list_files: List all stored files");
-        console.log("- exit: Exit the worker");
-
+        console.log("1: upload <file_path> - Upload a file");
+        console.log("2: download <file_id> <output_path> - Download a file");
+        console.log("3: list_chunks - List all stored chunks");
+        console.log("4: list_files - List all stored files");
+        console.log("5: exit - Exit the worker");
+        console.log("9: upload ./examples/example.txt - Upload a specific example file");
+        
         rl.on("line", async (input) => {
             const [command, ...args] = input.trim().split(" ");
-
-            switch (command) {
+            
+            // Map numbers to commands
+            const commandMap = {
+                '1': 'upload',
+                '2': 'download',
+                '3': 'list_chunks',
+                '4': 'list_files',
+                '5': 'exit',
+                '9': 'upload_example'
+            } as { [key: string]: string };
+        
+            // Check if the input is a number shortcut
+            const actualCommand = commandMap[command] || command;
+        
+            switch (actualCommand) {
                 case "upload":
                     if (args.length !== 1) {
                         console.log("Usage: upload <file_path>");
                         break;
                     }
                     await this.uploadFile(args[0]);
+                    break;
+                case "upload_example":
+                    // Upload the specific example file
+                    await this.uploadFile('./examples/example.txt');
                     break;
                 case "download":
                     if (args.length !== 2) {
@@ -407,10 +424,10 @@ class Worker {
                     rl.close();
                     break;
                 default:
-                    console.log("Unknown command:", command);
+                    console.log("Unknown command:", actualCommand);
             }
         });
-
+        
         rl.on("close", () => {
             console.log("Exiting worker...");
             process.exit(0);
