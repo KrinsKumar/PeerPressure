@@ -13,12 +13,11 @@ class Worker {
     this.chunks = new Map();
     this.setupEventListeners();
     this.workerSockets = new Map();
-    console.log(`Worker started on port ${port}`);
   }
 
   setupEventListeners() {
     this.server.on('connection', (socket) => {
-      console.log(`New connection on port ${this.port}`);
+      console.log(`New connection acquired`);
 
       socket.on('store_chunk', (data, callback) => {
         this.storeChunk(data.fileId, data.chunkId, data.chunk);
@@ -285,7 +284,9 @@ class Worker {
 }
 
 // Create and start the worker
-const port = process.argv[2] || 3000; 
-const trackerAddress = process.env.TRACKER_ADDRESS || 'http://localhost:3000';
+const port = process.env.WORKER_PORT || 3000; 
+const trackerAddress = `http://${process.env.TRACKER_HOST}:${process.env.TRACKER_PORT}` || 'http://localhost:3000';
+console.log(`Connecting to tracker at ${trackerAddress}...`)
 const worker = new Worker(port, trackerAddress);
 worker.cli();
+
