@@ -2,6 +2,8 @@ import express from "express";
 import { createClient } from "redis";
 import { addFileChunks, getFileChunks } from "./database.js";
 import cors from "cors";
+import readline from "readline"; // CLI integration
+import axios from "axios";
 
 const app = express();
 app.use(cors());
@@ -190,4 +192,62 @@ app.get("*", (req, res) => {
 // listen to the port
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
+});
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+console.log("Tracker CLI:");
+console.log("Available commands:");
+console.log("- 1: Fetch all workers");
+console.log("- 2: Fetch all files");
+console.log("- 3: Fetch chunks for a file");
+console.log("- 4: Exit");
+
+
+rl.on("line", async (input) => {
+  const [command] = input.trim().split(" ");
+
+  switch (command) {
+    case "1":
+      console.log("Fetching all workers...");
+      try {
+        const { data } = await axios.get("http://localhost:3000/worker");
+        console.log("Workers:", data);
+      } catch (error) {
+        console.error("Error fetching workers:", error.message);
+      }
+      break;
+
+    case "2":
+      console.log("Fetching all files...");
+      try {
+        const { data } = await axios.get("http://localhost:3000/files");
+        console.log("Files:", data);
+      } catch (error) {
+        console.error("Error fetching files:", error.message);
+      }
+      break;
+
+    case "3":
+      rl.question("Enter the file ID to fetch chunks: ", async (fileId) => {
+        try {
+          const { data } = await axios.get(`http://localhost:3000/files/${fileId}/chunks`);
+          console.log(`Chunks for file ${fileId}:`, data);
+        } catch (error) {
+          console.error("Error fetching file chunks:", error.message);
+        }
+      });
+      break;
+
+    case "4":
+      console.log("Exiting...");
+      rl.close();
+      break;
+
+    default:
+      console.log("Unknown command. Please enter a valid number.");
+  }
 });
