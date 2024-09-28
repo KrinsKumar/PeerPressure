@@ -1,35 +1,3 @@
-// import redis from "redis";
-
-// // list of available servers -> server_id : {route, status, last_seen}
-// export const online_nodes = redis.createClient();
-// online_nodes.on("error", function (error) {
-//   console.error(error);
-// });
-
-// // list of files names to id -> file_name : file_id
-// export const file_names = redis.createClient();
-// file_names.on("error", function (error) {
-//   console.error(error);
-// });
-
-// // list of file_id to an array of chunks -> file_id : [chunk_id]
-// export const file_chunks = redis.createClient();
-// file_chunks.on("error", function (error) {
-//   console.error(error);
-// });
-
-// // list of all nodes and their chunks -> node_id : [chunk_id]
-// export const node_chunks = redis.createClient();
-// node_chunks.on("error", function (error) {
-//   console.error(error);
-// });
-
-// // list of all chunks and their nodes -> chunk_id : [node_id]
-// export const chunk_nodes = redis.createClient();
-// chunk_nodes.on("error", function (error) {
-//   console.error(error);
-// });
-
 let prefix = {
   onlineWorkers: "onlineWorkers",
   fileNames: "fileNames",
@@ -39,12 +7,26 @@ let prefix = {
 };
 
 // add a new worker
-export async function addWorker(client, id, route, status, lastSeen) {
+export async function addWorker(client, id, route, status) {
+  lastSeen = new Date().getTime();
   console.log("Adding worker", id, route, status, lastSeen);
   let value = await client.get(prefix.onlineWorkers);
   let onlineWorkers = JSON.parse(value);
   onlineWorkers = onlineWorkers || {};
   onlineWorkers[id] = { route, status, lastSeen };
+  console.log(onlineWorkers);
+  client.set(prefix.onlineWorkers, JSON.stringify(onlineWorkers));
+  return true;
+}
+
+// update a worker with a new status
+export async function updateWorker(client, id, status) {
+  lastSeen = new Date().getTime();
+  console.log("Updating worker", id, status, lastSeen);
+  let value = await client.get(prefix.onlineWorkers);
+  let onlineWorkers = JSON.parse(value);
+  onlineWorkers = onlineWorkers || {};
+  onlineWorkers[id] = { ...onlineWorkers[id], status, lastSeen };
   console.log(onlineWorkers);
   client.set(prefix.onlineWorkers, JSON.stringify(onlineWorkers));
   return true;
@@ -57,23 +39,23 @@ export async function getWorkers(client) {
   return workers;
 }
 
-// get a map of a fileId -> fileHash
-export async function addFileId(client, fileId, fileHash) {
+// change this
+// get a map of a fileHash -> fileId, size
+export async function addFileId(client, fileId, fileHash, size) {
   console.log("Adding file id", fileId, fileHash);
   let value = await client.get(prefix.fileNames);
-  let fileNames = JSON.parse(value);
-  fileNames = fileNames || {};
-  fileNames[fileId] = { fileId, fileHash };
-  console.log(fileNames);
+  let fileHashes = JSON.parse(value);
+  fileHashes = fileHashes || {};
+  fileHashes[fileHash] = { fileId, size };
   client.set(prefix.fileNames, JSON.stringify(fileNames));
   return true;
 }
 
 // get a hash of a file using the fileId
-export async function getFileId(client, fileId) {
+export async function getFileId(client, fileHash) {
   let value = await client.get(prefix.fileNames);
   let fileNames = JSON.parse(value);
-  return fileNames[fileId];
+  return fileNames[fileHash];
 }
 
 // add the new fileHash -> [chunkId] combo

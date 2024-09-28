@@ -11,6 +11,7 @@ import {
   getWorkerChunks,
   getChunkNodes,
   addChunkNode,
+  updateWorker,
 } from "./database.js";
 
 const app = express();
@@ -31,17 +32,34 @@ app.get("/worker", async (req, res) => {
 
 // add a new worker
 app.post("/worker", async (req, res) => {
-  let id, route, status, last_seen;
+  let id, route, status;
   try {
-    ({ id, route, status, last_seen } = req.body);
+    ({ id, route, status } = req.body);
   } catch (e) {
     res.status(400).send("Please provide all the fields");
     return;
   }
-  if (await addWorker(client, id, route, status, last_seen)) {
-    res.json({ id, route, status, last_seen });
+  if (await addWorker(client, id, route, status)) {
+    res.json({ id, route, status });
   } else {
     res.status(500).send("Redis did not save the new Worker");
+  }
+});
+
+// update a worker
+app.put("/worker/:id", async (req, res) => {
+  let id = req.params.id;
+  let status;
+  try {
+    ({ status } = req.body);
+  } catch (e) {
+    res.status(400).send("Please provide a status");
+    return;
+  }
+  if (await updateWorker(client, id, status)) {
+    res.json({ id, status });
+  } else {
+    res.status(500).send("Redis did not update the Worker");
   }
 });
 
