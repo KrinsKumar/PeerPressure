@@ -138,6 +138,7 @@ class Worker {
       (worker) => worker.route !== this.route
     );
 
+    let chunkHashes = [];
     const chunkDistribution: { [chunkId: number]: string[] } = {};
 
     for (let i = 0; i < chunks.length; i++) {
@@ -145,6 +146,10 @@ class Worker {
         filteredWorkers,
         replicationFactor
       );
+      chunkHashes = [
+        ...chunkHashes,
+        crypto.createHash("sha256").update(chunks[i]).digest("hex"),
+      ];
       chunkDistribution[i] = [];
 
       for (const worker of targetWorkers) {
