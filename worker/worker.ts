@@ -5,6 +5,9 @@ import * as crypto from 'crypto';
 import * as readline from 'readline';
 import * as path from 'path';
 
+
+const TRACKER_URL = process.env.TRACKER_IP || 'https://cadc-137-122-64-209.ngrok-free.app';
+
 interface ChunkData {
     fileId: string;
     chunkId: number;
@@ -14,6 +17,7 @@ interface ChunkData {
 interface WorkerInfo {
     address: string;
     port: number;
+    route: string;
 }
 
 class Worker {
@@ -23,6 +27,7 @@ class Worker {
     private workerSockets: Map<string, ClientSocket>;
     private address: string;
     private port: number;
+    private route: string;
 
     constructor(port: number, trackerAddress: string) {
         this.port = port;
@@ -33,6 +38,20 @@ class Worker {
         this.workerSockets = new Map();
         this.address = 'localhost'; // Assuming the address is localhost
         console.log(`Worker started on port ${port}`);
+        this.route = `http://${this.address}:${this.port}`;
+
+        fetch(`${TRACKER_URL}/worker`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: this.port,
+                address: this.address,
+                port: this.port,
+                route: this.route
+            })
+        })
     }
 
     private setupEventListeners() {
@@ -85,20 +104,25 @@ class Worker {
         const replicationFactor = Math.ceil(activeWorkers.length / 2);
 
         const workerSockets: { [key: string]: ClientSocket } = {};
+        console.log("active workers: ", activeWorkers);
         for (const worker of activeWorkers) {
-            if (worker.address !== this.address || worker.port !== this.port) {
-                const workerSocket = ioClient(`http://${worker.address}:${worker.port}`);
-                workerSockets[`${worker.address}:${worker.port}`] = workerSocket;
+            console.log(worker.route, this.route);
+            if (worker.route !== this.route) {
+                const workerSocket = ioClient(`${worker.route}`);
+                workerSockets[`${worker.route}`] = workerSocket;
             }
         }
+        const filteredWorkers = activeWorkers.filter(worker => worker.route !== this.route);
+
 
         for (let i = 0; i < chunks.length; i++) {
-            const targetWorkers = this.selectRandomWorkers(activeWorkers, replicationFactor);
+            const targetWorkers = this.selectRandomWorkers(filteredWorkers, replicationFactor);
+            console.log("====worker sockets: ", targetWorkers);
 
             for (const worker of targetWorkers) {
-                const workerKey = `${worker.address}:${worker.port}`;
+                const workerKey = worker.route;
                 const workerSocket = workerSockets[workerKey];
-
+                // console.log("sending chunk to worker: ", workerSocket, workerKey);
                 await new Promise<void>((resolve) => {
                     workerSocket.emit('store_chunk', {
                         fileId,
@@ -124,15 +148,30 @@ class Worker {
             fileSize: fileContent.length
         });
 
+        // Send file metadata to tracker
+        fetch(`${TRACKER_URL}/files`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                fileHash: fileId,
+                fileName: path.basename(filePath),
+                size: fileContent.length
+            }),
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error sending file metadata to tracker:', error));
+
         console.log(`File uploaded with ID: ${fileId}`);
         return fileId;
     }
 
     private async getActiveWorkers(): Promise<WorkerInfo[]> {
         return new Promise((resolve) => {
-            this.trackerSocket.emit('get_active_workers', (workers: WorkerInfo[]) => {
-                resolve(workers);
-            });
+            fetch(`${TRACKER_URL}/worker`)
+                .then(response => response.json())
+                .then(data => resolve(data));
         });
     }
 
@@ -221,12 +260,22 @@ class Worker {
     }
 
     private listStoredFiles() {
-        this.trackerSocket.emit('list_files', (files: any[]) => {
-            console.log('Stored files:', files);
-            files.forEach((file, index) => {
-                console.log(`File ID: ${file.fileId}, Name: ${file.fileName}, Size: ${file.fileSize} bytes`);
+        console.log('Fetching stored files from tracker...');
+        fetch(`${TRACKER_URL}/files`)
+            .then(response => response.json())
+            .then(files => {
+                console.log('Stored files:');
+                Object.entries(files).forEach(([fileId, fileInfo]) => {
+                    if (typeof fileInfo === 'object' && fileInfo !== null && 'fileName' in fileInfo && 'size' in fileInfo) {
+                        console.log(`File ID: ${fileId}, Name: ${fileInfo.fileName}, Size: ${fileInfo.size} bytes`);
+                    } else {
+                        console.log(`File ID: ${fileId}, Info: ${JSON.stringify(fileInfo)}`);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching stored files:', error);
             });
-        });
     }
 
     cli() {
