@@ -6,8 +6,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start_rest": "node index-rest.js",
-    "start_socket": "node index-socket.js"
+    "start": "node index-rest.js"
   },
   "author": "",
   "license": "ISC",
