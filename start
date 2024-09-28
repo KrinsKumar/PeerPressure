@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+export TRACKER_HOST=localhost
+export TRACKER_PORT=3000
+
+pushd tracker
+
+scripts/build
+scripts/run
+
+popd
+pushd worker
+
+scripts/build
+scripts/run 3001 3002 3003 3004 3005
+

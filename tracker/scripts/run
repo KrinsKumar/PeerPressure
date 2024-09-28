@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+import subprocess
+import os
+
+
+IMAGE = "hack-the-hill-tracker"
+TRACKER_PORT = os.getenv("TRACKER_PORT")
+
+subprocess.run(["docker", "run", "-p", f"{TRACKER_PORT}:3000", "-dit", IMAGE])
+
