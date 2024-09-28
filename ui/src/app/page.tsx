@@ -4,10 +4,13 @@ import { useState } from "react"
 
 import { FileUploader } from "@/components/ui/upload"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { NodeSelector } from "@/components/ui/node"
 
 export default function Home() {
   const [isFileUploaderOpen, setIsFileUploaderOpen] = useState(false);
   const [isDraggingFileUpload, setIsDraggingFileUpload] = useState(false);
+  const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
+  const [address, setAddress] = useState("");
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -51,7 +54,12 @@ export default function Home() {
           <TabsTrigger value="upload" className="w-40">Upload</TabsTrigger>
           <TabsTrigger value="files" className="w-40">Files</TabsTrigger>
         </TabsList>
-        <span>Node</span>
+        <NodeSelector
+          isOpen={isNodeSelectorOpen}
+          setIsOpen={setIsNodeSelectorOpen}
+          selected={address}
+          onSelect={(node) => setAddress(node.address)}
+        />
       </div>
       <TabsContent value="upload">
         <h1 className="w-fit mx-auto mt-40 text-5xl">Files for users, by users</h1>
