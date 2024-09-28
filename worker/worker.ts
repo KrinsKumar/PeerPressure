@@ -233,9 +233,11 @@ class Worker {
     const fileChunks = await this.getFileChunks(fileId);
 
     console.log("retrieving file with ID: ", fileId);
+    console.log("file chunks: ", fileChunks);
 
     for (const chunkId of fileChunks) {
       const locations = await this.getChunkLocations(fileId, chunkId);
+      console.log(locations);
       if (locations.length === 0) {
         console.error(`Chunk ${chunkId} of file ${fileId} not found`);
         return;
@@ -287,27 +289,51 @@ class Worker {
     `);
   }
 
-  private getChunkLocations(
-    fileId: string,
-    chunkId: number
-  ): Promise<WorkerInfo[]> {
-    return new Promise((resolve) => {
-      this.trackerSocket.emit(
-        "get_chunk_locations",
-        { fileId, chunkId },
-        (locations: WorkerInfo[]) => {
-          resolve(locations);
-        }
-      );
-    });
+  private getChunkLocations(fileId: string, chunkId: number): Promise<WorkerInfo[]> {
+    return fetch(`${TRACKER_URL}/files/${fileId}/chunks`)
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data)
+          const chunkLocations = data[chunkId.toString()]; // Get the locations for the specific chunkId
+          console.log(chunkLocations)
+          if (!chunkLocations) {
+            return []; // Return an empty array if no chunk locations are found
+          }
+
+          // Format the locations into WorkerInfo objects
+          const formattedLocations: WorkerInfo[] = chunkLocations.map((location: string) => {
+            const url = new URL(location); // Parse the URL to extract components
+            return {
+              address: url.hostname, // Only the hostname (e.g., localhost)
+              port: Number(url.port), // 3004 (converted to a number)
+              route: `/chunks/${chunkId}` // /chunks/{chunkId}
+            };
+          });
+
+
+          return formattedLocations;
+        })
+        .catch((error) => {
+          console.error("Error fetching chunk locations:", error);
+          return []; // Return an empty array in case of an error
+        });
   }
 
   private getFileChunks(fileId: string): Promise<number[]> {
-    return new Promise((resolve) => {
-      this.trackerSocket.emit("get_file_chunks", fileId, (chunks: number[]) => {
-        resolve(chunks);
-      });
-    });
+    console.log("Getting file chunks from tracker...");
+    return fetch(`${TRACKER_URL}/files/${fileId}/chunks`)
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+          // Extract the keys of the object as numbers and return them as an array
+          const chunkNumbers = Object.keys(data).map(Number);
+          console.log(chunkNumbers);
+          return chunkNumbers;
+        })
+        .catch((error) => {
+          console.error("Error fetching stored files:", error);
+          return []; // Return an empty array in case of an error
+        });
   }
 
   private listStoredChunks() {
