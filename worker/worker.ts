@@ -57,6 +57,7 @@ class Worker {
     private setupEventListeners() {
         this.server.on('connection', (socket) => {
             console.log(`New connection on port ${this.port}`);
+
             socket.on('store_chunk', (data: ChunkData, callback: (response: { success: boolean }) => void) => {
                 this.storeChunk(data.fileId, data.chunkId, data.chunk);
                 this.trackerSocket.emit('store_chunk_info', {
@@ -113,16 +114,18 @@ class Worker {
             }
         }
         const filteredWorkers = activeWorkers.filter(worker => worker.route !== this.route);
+        
+        
 
+        const chunkDistribution: { [chunkId: number]: string[] } = {};
 
         for (let i = 0; i < chunks.length; i++) {
             const targetWorkers = this.selectRandomWorkers(filteredWorkers, replicationFactor);
-            console.log("====worker sockets: ", targetWorkers);
+            chunkDistribution[i] = targetWorkers.map(worker => worker.route);
 
             for (const worker of targetWorkers) {
                 const workerKey = worker.route;
                 const workerSocket = workerSockets[workerKey];
-                // console.log("sending chunk to worker: ", workerSocket, workerKey);
                 await new Promise<void>((resolve) => {
                     workerSocket.emit('store_chunk', {
                         fileId,
@@ -136,6 +139,19 @@ class Worker {
                 });
             }
         }
+
+        // Send chunk distribution data to tracker
+        fetch(`${TRACKER_URL}/files/${fileId}/chunks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chunk: { fileId : chunkDistribution}
+            }),
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error sending chunk distribution to tracker:', error));
 
         for (const workerKey in workerSockets) {
             workerSockets[workerKey].close();
