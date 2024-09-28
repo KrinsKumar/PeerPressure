@@ -191,3 +191,53 @@ app.get("*", (req, res) => {
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+rl.on("line", async (input) => {
+  const [command] = input.trim().split(" ");
+
+  switch (command) {
+    case "1":
+      console.log("Fetching all workers...");
+      try {
+        const { data } = await axios.get("http://localhost:3000/worker");
+        console.log("Workers:", data);
+      } catch (error) {
+        console.error("Error fetching workers:", error.message);
+      }
+      break;
+
+    case "2":
+      console.log("Fetching all files...");
+      try {
+        const { data } = await axios.get("http://localhost:3000/files");
+        console.log("Files:", data);
+      } catch (error) {
+        console.error("Error fetching files:", error.message);
+      }
+      break;
+
+    case "3":
+      rl.question("Enter the file ID to fetch chunks: ", async (fileId) => {
+        try {
+          const { data } = await axios.get(`http://localhost:3000/files/${fileId}/chunks`);
+          console.log(`Chunks for file ${fileId}:`, data);
+        } catch (error) {
+          console.error("Error fetching file chunks:", error.message);
+        }
+      });
+      break;
+
+    case "4":
+      console.log("Exiting...");
+      rl.close();
+      break;
+
+    default:
+      console.log("Unknown command. Please enter a valid number.");
+  }
+});
