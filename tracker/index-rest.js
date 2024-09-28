@@ -3,6 +3,7 @@ import { createClient } from "redis";
 import { addFileChunks, getFileChunks } from "./database.js";
 import cors from "cors";
 import readline from "readline"; // CLI integration
+import axios from "axios";
 
 const app = express();
 app.use(cors());
