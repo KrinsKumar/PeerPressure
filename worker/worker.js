@@ -282,7 +282,6 @@ class Worker {
 
     rl.prompt();
   }
-
 }
 
 // Create and start the worker
