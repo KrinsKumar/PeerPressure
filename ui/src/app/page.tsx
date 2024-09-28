@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 import { FileUploader } from "@/components/ui/upload"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export default function Home() {
   const [isFileUploaderOpen, setIsFileUploaderOpen] = useState(false);
@@ -43,24 +44,29 @@ export default function Home() {
   }
 
   return (
-     <div className="w-full container mx-auto">
+     <Tabs className="w-full container mx-auto" defaultValue="upload">
       <div className="flex flex-row justify-between my-4">
         <span>qtor</span>
-        <span>Dashboard</span>
+        <TabsList>
+          <TabsTrigger value="upload" className="w-40">Upload</TabsTrigger>
+          <TabsTrigger value="files" className="w-40">Files</TabsTrigger>
+        </TabsList>
         <span>Node</span>
       </div>
-      <h1 className="w-fit mx-auto mt-40 text-5xl">Files for users, by users</h1>
-      <div className="w-fit mx-auto my-32">
-        <FileUploader
-          isOpen={isFileUploaderOpen}
-          setIsOpen={setIsFileUploaderOpen}
-          isDragging={isDraggingFileUpload}
-          handleDragOver={handleDragOver}
-          handleDragLeave={handleDragLeave}
-          handleDrop={handleDrop}
-          handleFileInput={handleFileInput}
-        />
-      </div>
-     </div>
+      <TabsContent value="upload">
+        <h1 className="w-fit mx-auto mt-40 text-5xl">Files for users, by users</h1>
+        <div className="w-fit mx-auto my-32">
+          <FileUploader
+            isOpen={isFileUploaderOpen}
+            setIsOpen={setIsFileUploaderOpen}
+            isDragging={isDraggingFileUpload}
+            handleDragOver={handleDragOver}
+            handleDragLeave={handleDragLeave}
+            handleDrop={handleDrop}
+            handleFileInput={handleFileInput}
+          />
+        </div>
+      </TabsContent>
+     </Tabs>
   );
 }
