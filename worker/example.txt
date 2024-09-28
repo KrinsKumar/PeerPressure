@@ -1,0 +1,526 @@
+<<<<<<< Updated upstream
+I want to configure TXT records that are longer than 255 characters in Amazon Route 53.
+Short description
+
+A TXT record has the following limits:
+
+    One or more strings that are enclosed in double quotation marks (")
+    A value of up to 255 characters in one string
+    Multiple strings of 255 characters in a single TXT record
+    Maximum length of a value of 4,000 characters
+    Case-sensitive values
+
+Note: In the console, the value on a separate line is treated as a different record value.
+Resolution
+
+To break the value into a string of up to 255 characters, enclose each string in double quotations marks ("). For example, use the "String_1 " "String_2 " "String_3" value.
+
+Note: For the value format, you must separate the values with a space and keep all the strings on the same line.
+
+The following example query shows a TXT record configures values for domain verification, the SPF record, and DomainKeys Identified Mail (DKIM) signing:
+
+txt1.geeksbox.club. TXT 3600 "google-site-verification=rXOxyZounnZasA8Z7oaD3c14JdjS9aKSWvsR1EbUSIQ"
+"v=spf1 include:_netblocks.google.com " "include:_netblocks2.google.com " "include:_netblocks3.google.com ~all"
+"spf2.0/pra include:spf1.amazon.com include:spf2.amazon.com include:amazonses.com -all"
+"v=DKIM1;k=rsa;p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDeIhtCv3vUinyhKiKtZ8efjHGGo8gE1T+o7gLrvo6yRtdz9ICe6Fz5sgz0WYFW5nCV4DmaTcS25TfgWKsLgg"
+
+Note: It's a best practice to create a TXT record that contains the applicable values instead of a Sender Policy Framework (SPF) record. For more information, see Why don't other mail providers identify the SPF record I successfully created in Route 53?
+Topics
+Networking & Content Delivery
+Tags
+Amazon Route 53
+Language
+English
+AWS OFFICIAL
+AWS OFFICIALUpdated a month ago
+4 Comments
+
+Here is the solution
+
+Paste the TXT value and find an approximate middle of the value. Put your mouse pointer and press enter on keyboard. That's it, no quotation marks whatsover, since route53 will include it for you.
+Syed
+replied 8 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 8 months ago
+
+I have been trying to update our 255+ character TXT record for SPF, followed the advise here ("v=spf1 include:somethinghere""include:somethingelshehere"), Route 53 accept the change but the internet DNS server complain about a syntax error. When checked from https://mxtoolbox.com/ or https://easydmarc.com/, they complain about syntax and shows "v=spf1 include:somethinghereincludesomethingelshehere" instead of "v=spf1 include:somethinghere includesomethingelshehere"
+doudou225
+replied 4 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 4 months ago
+Comment on this article
+
+I want to configure TXT records that are longer than 255 characters in Amazon Route 53.
+Short description
+
+A TXT record has the following limits:
+
+    One or more strings that are enclosed in double quotation marks (")
+    A value of up to 255 characters in one string
+    Multiple strings of 255 characters in a single TXT record
+    Maximum length of a value of 4,000 characters
+    Case-sensitive values
+
+Note: In the console, the value on a separate line is treated as a different record value.
+Resolution
+
+To break the value into a string of up to 255 characters, enclose each string in double quotations marks ("). For example, use the "String_1 " "String_2 " "String_3" value.
+
+Note: For the value format, you must separate the values with a space and keep all the strings on the same line.
+
+The following example query shows a TXT record configures values for domain verification, the SPF record, and DomainKeys Identified Mail (DKIM) signing:
+
+txt1.geeksbox.club. TXT 3600 "google-site-verification=rXOxyZounnZasA8Z7oaD3c14JdjS9aKSWvsR1EbUSIQ"
+"v=spf1 include:_netblocks.google.com " "include:_netblocks2.google.com " "include:_netblocks3.google.com ~all"
+"spf2.0/pra include:spf1.amazon.com include:spf2.amazon.com include:amazonses.com -all"
+"v=DKIM1;k=rsa;p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDeIhtCv3vUinyhKiKtZ8efjHGGo8gE1T+o7gLrvo6yRtdz9ICe6Fz5sgz0WYFW5nCV4DmaTcS25TfgWKsLgg"
+
+Note: It's a best practice to create a TXT record that contains the applicable values instead of a Sender Policy Framework (SPF) record. For more information, see Why don't other mail providers identify the SPF record I successfully created in Route 53?
+Topics
+Networking & Content Delivery
+Tags
+Amazon Route 53
+Language
+English
+AWS OFFICIAL
+AWS OFFICIALUpdated a month ago
+4 Comments
+
+Here is the solution
+
+Paste the TXT value and find an approximate middle of the value. Put your mouse pointer and press enter on keyboard. That's it, no quotation marks whatsover, since route53 will include it for you.
+Syed
+replied 8 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 8 months ago
+
+I have been trying to update our 255+ character TXT record for SPF, followed the advise here ("v=spf1 include:somethinghere""include:somethingelshehere"), Route 53 accept the change but the internet DNS server complain about a syntax error. When checked from https://mxtoolbox.com/ or https://easydmarc.com/, they complain about syntax and shows "v=spf1 include:somethinghereincludesomethingelshehere" instead of "v=spf1 include:somethinghere includesomethingelshehere"
+doudou225
+replied 4 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 4 months ago
+Comment on this article
+
+
+
+I want to configure TXT records that are longer than 255 characters in Amazon Route 53.
+Short description
+
+A TXT record has the following limits:
+
+    One or more strings that are enclosed in double quotation marks (")
+    A value of up to 255 characters in one string
+    Multiple strings of 255 characters in a single TXT record
+    Maximum length of a value of 4,000 characters
+    Case-sensitive values
+
+Note: In the console, the value on a separate line is treated as a different record value.
+Resolution
+
+To break the value into a string of up to 255 characters, enclose each string in double quotations marks ("). For example, use the "String_1 " "String_2 " "String_3" value.
+
+Note: For the value format, you must separate the values with a space and keep all the strings on the same line.
+
+The following example query shows a TXT record configures values for domain verification, the SPF record, and DomainKeys Identified Mail (DKIM) signing:
+
+txt1.geeksbox.club. TXT 3600 "google-site-verification=rXOxyZounnZasA8Z7oaD3c14JdjS9aKSWvsR1EbUSIQ"
+"v=spf1 include:_netblocks.google.com " "include:_netblocks2.google.com " "include:_netblocks3.google.com ~all"
+"spf2.0/pra include:spf1.amazon.com include:spf2.amazon.com include:amazonses.com -all"
+"v=DKIM1;k=rsa;p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDeIhtCv3vUinyhKiKtZ8efjHGGo8gE1T+o7gLrvo6yRtdz9ICe6Fz5sgz0WYFW5nCV4DmaTcS25TfgWKsLgg"
+
+Note: It's a best practice to create a TXT record that contains the applicable values instead of a Sender Policy Framework (SPF) record. For more information, see Why don't other mail providers identify the SPF record I successfully created in Route 53?
+Topics
+Networking & Content Delivery
+Tags
+Amazon Route 53
+Language
+English
+AWS OFFICIAL
+AWS OFFICIALUpdated a month ago
+4 Comments
+
+Here is the solution
+
+Paste the TXT value and find an approximate middle of the value. Put your mouse pointer and press enter on keyboard. That's it, no quotation marks whatsover, since route53 will include it for you.
+Syed
+replied 8 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 8 months ago
+
+I have been trying to update our 255+ character TXT record for SPF, followed the advise here ("v=spf1 include:somethinghere""include:somethingelshehere"), Route 53 accept the change but the internet DNS server complain about a syntax error. When checked from https://mxtoolbox.com/ or https://easydmarc.com/, they complain about syntax and shows "v=spf1 include:somethinghereincludesomethingelshehere" instead of "v=spf1 include:somethinghere includesomethingelshehere"
+doudou225
+replied 4 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 4 months ago
+Comment on this article
+
+
+I want to configure TXT records that are longer than 255 characters in Amazon Route 53.
+Short description
+
+A TXT record has the following limits:
+
+    One or more strings that are enclosed in double quotation marks (")
+    A value of up to 255 characters in one string
+    Multiple strings of 255 characters in a single TXT record
+    Maximum length of a value of 4,000 characters
+    Case-sensitive values
+
+Note: In the console, the value on a separate line is treated as a different record value.
+Resolution
+
+To break the value into a string of up to 255 characters, enclose each string in double quotations marks ("). For example, use the "String_1 " "String_2 " "String_3" value.
+
+Note: For the value format, you must separate the values with a space and keep all the strings on the same line.
+
+The following example query shows a TXT record configures values for domain verification, the SPF record, and DomainKeys Identified Mail (DKIM) signing:
+
+txt1.geeksbox.club. TXT 3600 "google-site-verification=rXOxyZounnZasA8Z7oaD3c14JdjS9aKSWvsR1EbUSIQ"
+"v=spf1 include:_netblocks.google.com " "include:_netblocks2.google.com " "include:_netblocks3.google.com ~all"
+"spf2.0/pra include:spf1.amazon.com include:spf2.amazon.com include:amazonses.com -all"
+"v=DKIM1;k=rsa;p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDeIhtCv3vUinyhKiKtZ8efjHGGo8gE1T+o7gLrvo6yRtdz9ICe6Fz5sgz0WYFW5nCV4DmaTcS25TfgWKsLgg"
+
+Note: It's a best practice to create a TXT record that contains the applicable values instead of a Sender Policy Framework (SPF) record. For more information, see Why don't other mail providers identify the SPF record I successfully created in Route 53?
+Topics
+Networking & Content Delivery
+Tags
+Amazon Route 53
+Language
+English
+AWS OFFICIAL
+AWS OFFICIALUpdated a month ago
+4 Comments
+
+Here is the solution
+
+Paste the TXT value and find an approximate middle of the value. Put your mouse pointer and press enter on keyboard. That's it, no quotation marks whatsover, since route53 will include it for you.
+Syed
+replied 8 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 8 months ago
+
+I have been trying to update our 255+ character TXT record for SPF, followed the advise here ("v=spf1 include:somethinghere""include:somethingelshehere"), Route 53 accept the change but the internet DNS server complain about a syntax error. When checked from https://mxtoolbox.com/ or https://easydmarc.com/, they complain about syntax and shows "v=spf1 include:somethinghereincludesomethingelshehere" instead of "v=spf1 include:somethinghere includesomethingelshehere"
+doudou225
+replied 4 months ago
+
+Thank you for your comment. We'll review and update the Knowledge Center article as needed.
+profile pictureAWS
+MODERATOR
+AWS Official
+replied 4 months ago
+Comment on this article
+=======
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+1 - Streaming a file.
+
+Write a script that reads its own source code and streams it to stdout.
+Tips
+
+For this task we'll need to use the stream API.
+
+Check out the fs.createReadStream to create readable streams from files.
+
+To pipe two or more streams together with error handling included, check out the pump module.
+
+If you are looking for a file to stream out, you can use the source code itself using the __filename filename.
+Testing
+
+To test your program, simply run it with node and verify that it outputs its own source code.
+
+node reader.js
+
+When you are done click here to go to the next exercise
+fdasfdas
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nunc id aliquam tincidunt, nisi velit ultricies nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Praesent vel justo vel nunc tincidunt tincidunt. Fusce vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+
+Donec vel nunc vel nunc tincidunt tincidunt. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc. Sed euismod, nisl vel tincidunt tincidunt, nunc nunc tincidunt nunc, nec tincidunt nunc nunc vel nunc.
+>>>>>>> Stashed changes
