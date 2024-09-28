@@ -50,15 +50,17 @@ export default function Home() {
         <span>Node</span>
       </div>
       <h1 className="w-fit mx-auto mt-40 text-5xl">Files for users, by users</h1>
-      <FileUploader
-        isOpen={isFileUploaderOpen}
-        setIsOpen={setIsFileUploaderOpen}
-        isDragging={isDraggingFileUpload}
-        handleDragOver={handleDragOver}
-        handleDragLeave={handleDragLeave}
-        handleDrop={handleDrop}
-        handleFileInput={handleFileInput}
-      />
+      <div className="w-fit mx-auto my-32">
+        <FileUploader
+          isOpen={isFileUploaderOpen}
+          setIsOpen={setIsFileUploaderOpen}
+          isDragging={isDraggingFileUpload}
+          handleDragOver={handleDragOver}
+          handleDragLeave={handleDragLeave}
+          handleDrop={handleDrop}
+          handleFileInput={handleFileInput}
+        />
+      </div>
      </div>
   );
 }
