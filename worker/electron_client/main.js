@@ -3,7 +3,9 @@
 // Modules to control application life and create native browser window
 const { app, BrowserWindow } = require('electron')
 const path = require('node:path')
+const io = require('socket.io-client')
 
+const socket = io('http://localhost:3000')
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
