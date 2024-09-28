@@ -54,7 +54,7 @@ class Tracker {
       socket.on('list_files', (callback) => {
         console.log('Listing files: ', this.files);
         // TODO: fix this as it's returning 0 id
-        callback(Array.from(this.files.values()));
+        callback([...this.files.entries()]);
       });
 
     });
@@ -111,4 +111,4 @@ class Tracker {
 
 // Create and start the tracker
 const port = 3000;
-const tracker = new Tracker(port);
+const tracker = new Tracker(port); 

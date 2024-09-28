@@ -12,6 +12,7 @@ class Worker {
     this.trackerSocket = ioClient(trackerAddress);
     this.chunks = new Map();
     this.setupEventListeners();
+    this.workerSockets = new Map();
     console.log(`Worker started on port ${port}`);
   }
 
@@ -60,7 +61,8 @@ class Worker {
 
   async uploadFile(filePath) {
     const fileContent = fs.readFileSync(filePath);
-    const fileId = crypto.randomBytes(16).toString('hex');
+    // const fileId = crypto.randomBytes(16).toString('hex');
+    const fileId =  crypto.createHash('sha256').update(fileContent).digest('hex');
     const chunks = this.splitIntoChunks(fileContent);
 
 
@@ -70,6 +72,7 @@ class Worker {
     for (let i = 0; i < chunks.length; i++) {
       const targetWorkers = this.selectRandomWorkers(activeWorkers, replicationFactor);
       for (const worker of targetWorkers) {
+        // TODO: This creates a new socket for each chunk, which is not efficient
         const workerSocket = ioClient(`http://${worker.address}:${worker.port}`);
         await new Promise((resolve) => {
           workerSocket.emit('store_chunk', {
@@ -113,6 +116,8 @@ class Worker {
   async downloadFile(fileId, outputPath) {
     const chunks = [];
     const fileChunks = await this.getFileChunks(fileId);
+
+    console.log("retrieving file with ID: ", fileId);
   
     for (const chunkId of fileChunks) {
       const locations = await this.getChunkLocations(fileId, chunkId);
@@ -123,6 +128,7 @@ class Worker {
       console.log("trying to retrieve chunk");
       // Attempt to retrieve the chunk from the first available location
       const chunk = await new Promise((resolve) => {
+        // TODO: This creates a new socket for each chunk, which is not efficient
         const nodeSocket = ioClient(`http://${locations[0].address}:${locations[0].port}`);
         nodeSocket.emit('retrieve_chunk', { fileId, chunkId }, (chunk) => {
           resolve(chunk);
@@ -143,9 +149,10 @@ class Worker {
   
     // Concatenate the chunks into a single buffer
     const fileContent = Buffer.concat(validChunks);
+    // TODO: if the integrity check fails, we should try to retrieve the file from other workers
+    this.verifyFileIntegrity(fileContent, fileId);
     fs.writeFileSync(outputPath, fileContent);
     console.log(`File downloaded to ${outputPath}`);
-    this.verifyFileIntegrity(fileContent, fileId);
   }
 
   splitIntoChunks(buffer) {
@@ -158,7 +165,7 @@ class Worker {
   }
 
   verifyFileIntegrity(fileContent, fileId) {
-    
+
     const hash = crypto.createHash('sha256').update(fileContent).digest('hex');
     console.log(`File integrity check:
       File ID: ${fileId}
@@ -209,9 +216,10 @@ class Worker {
   listStoredFiles() {
     this.trackerSocket.emit('list_files', (files) => {
       console.log('Stored files:', files);
-      files.forEach((file, fileId) => {
+      files[0].forEach((file, fileId) => {
         console.log(`File ID: ${fileId}, Name: ${file.fileName}, Size: ${file.fileSize} bytes`);
       });
+      
     });
   }
 
@@ -279,6 +287,6 @@ class Worker {
 
 // Create and start the worker
 const port = process.argv[2] || 3001; 
-const trackerAddress = 'http://localhost:3000'; 
+const trackerAddress = process.env.TRACKER_ADDRESS || 'http://localhost:3000';
 const worker = new Worker(port, trackerAddress);
 worker.cli();
