@@ -36,6 +36,7 @@ app.post("/worker", async (req, res) => {
 
   workers = workers.filter((worker) => worker.id !== id);
   workers.push({ id, route, status, lastSeen });
+  console.log("Adding a worker", id, route, status, lastSeen);
   res.send({ id, route, status, lastSeen });
 });
 
