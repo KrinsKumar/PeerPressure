@@ -8,6 +8,7 @@ import subprocess
 IMAGE = "hack-the-hill-worker"
 TRACKER_HOST = os.getenv("TRACKER_HOST")
 TRACKER_PORT = os.getenv("TRACKER_PORT")
+WORKER_HOST = os.getenv("WORKER_HOST")
 
 args = sys.argv
 ports = args[1:]
@@ -17,5 +18,5 @@ if len(ports) < 1:
 
 for port in ports:
     print(f"starting on port {port}...")
-    subprocess.run(["docker", "run", "-dit", "-e", f"TRACKER_HOST={TRACKER_HOST}", "-e", f"TRACKER_PORT={TRACKER_PORT}", "-e", f"WORKER_PORT={port}", "-e", f"WORKER_HOST=localhost", "--net", "host", IMAGE])
+    subprocess.run(["docker", "run", "-dit", "-e", f"TRACKER_HOST={TRACKER_HOST}", "-e", f"TRACKER_PORT={TRACKER_PORT}", "-e", f"WORKER_PORT={port}", "-e", f"WORKER_HOST={WORKER_HOST}", "--net", "host", IMAGE])
 
