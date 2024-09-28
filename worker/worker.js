@@ -62,11 +62,6 @@ class Worker {
     const fileId = crypto.randomBytes(16).toString('hex');
     const chunks = this.splitIntoChunks(fileContent);
 
-    // Store the uploaded file information
-    this.files.set(fileId, {
-      fileName: path.basename(filePath),
-      fileSize: fileContent.length
-    });
 
     const activeWorkers = await this.getActiveWorkers();
     const replicationFactor = Math.ceil(activeWorkers.length / 2);
@@ -210,9 +205,11 @@ class Worker {
 
 
   listStoredFiles() {
-    console.log('Stored files:');
-    this.files.forEach((fileInfo, fileId) => {
-      console.log(`File ID: ${fileId}, Name: ${fileInfo.fileName}, Size: ${fileInfo.fileSize} bytes`);
+    this.trackerSocket.emit('list_files', (files) => {
+      console.log('Stored files:');
+      files.forEach((file, fileId) => {
+        console.log(`File ID: ${fileId}, Name: ${file.fileName}, Size: ${file.fileSize} bytes`);
+      });
     });
   }
 

@@ -45,6 +45,17 @@ class Tracker {
       socket.on('retrieve_chunk', (data, callback) => {
         this.retrieveChunk(data.fileId, data.chunkId, callback);
       });
+
+      socket.on('store_file', (data) => {
+        this.storeFile(data.fileId, data.fileName, data.fileSize);
+        
+      });
+
+      socket.on('list_files', (callback) => {
+        console.log('Listing files: ', this.files);
+        callback(Array.from(this.files.values()));
+      });
+
     });
   }
 
@@ -91,8 +102,10 @@ class Tracker {
   }
 
   storeFile(fileId, fileName, fileSize) {
+    console.log(`Storing file: ${fileName} with ID: ${fileId}`);
     this.files.set(fileId, { fileName, fileSize });
   }
+
 }
 
 // Create and start the tracker
