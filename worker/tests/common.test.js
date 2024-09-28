@@ -1,5 +1,10 @@
-const sum = require('../src/common')
+const { chunk } = require('../src/common')
 
-test('adds 1 + 2 to equal 3', () => {
-  expect(sum(1, 2)).toBe(3);
+test('chunk less than size', () => {
+  expect(chunk("hello world, tis me", 42)).toEqual(["hello world, tis me"]);
 });
+
+test('chunk greater than size', () => {
+  expect(chunk("hello world, tis me", 12)).toEqual(["hello world,", " tis me"]);
+});
+
