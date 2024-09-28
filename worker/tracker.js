@@ -53,8 +53,13 @@ class Tracker {
 
       socket.on('list_files', (callback) => {
         console.log('Listing files: ', this.files);
-        // TODO: fix this as it's returning 0 id
-        callback([...this.files.entries()]);
+        // Convert Map to an array of objects
+        const filesArray = Array.from(this.files.entries()).map(([fileId, fileInfo]) => ({
+          fileId,
+          fileName: fileInfo.fileName,
+          fileSize: fileInfo.fileSize
+        }));
+        callback(filesArray);  // Send the array back
       });
 
     });

@@ -49,7 +49,7 @@ class Worker {
       this.chunks.set(fileId, new Map());
     }
     this.chunks.get(fileId).set(chunkId, chunk);
-    console.log(`Stored chunk ${chunkId} of file ${fileId}`);
+    console.log(`Stored chunk ${chunkId} of file ${fileId} to node ${this.trackerSocket}:${this.port}`);
   }
 
   retrieveChunk(fileId, chunkId) {
@@ -61,32 +61,53 @@ class Worker {
 
   async uploadFile(filePath) {
     const fileContent = fs.readFileSync(filePath);
-    // const fileId = crypto.randomBytes(16).toString('hex');
-    const fileId =  crypto.createHash('sha256').update(fileContent).digest('hex');
+    const fileId = crypto.createHash('sha256').update(fileContent).digest('hex');
     const chunks = this.splitIntoChunks(fileContent);
 
-
+    // Get all active workers
     const activeWorkers = await this.getActiveWorkers();
     const replicationFactor = Math.ceil(activeWorkers.length / 2);
 
-    for (let i = 0; i < chunks.length; i++) {
-      const targetWorkers = this.selectRandomWorkers(activeWorkers, replicationFactor);
-      for (const worker of targetWorkers) {
-        // TODO: This creates a new socket for each chunk, which is not efficient
-        const workerSocket = ioClient(`http://${worker.address}:${worker.port}`);
-        await new Promise((resolve) => {
-          workerSocket.emit('store_chunk', {
-            fileId,
-            chunkId: i,
-            chunk: chunks[i]
-          }, (response) => {
-            if (response.success) {
-              resolve();
-            }
-          });
-        });
-      }
+    // Establish socket connections for all available workers except itself
+    const workerSockets = {};
+    for (const worker of activeWorkers) {
+        if (worker.address !== this.address || worker.port !== this.port) {
+            const workerSocket = ioClient(`http://${worker.address}:${worker.port}`);
+            workerSockets[`${worker.address}:${worker.port}`] = workerSocket;
+        }
     }
+
+    // Loop through each chunk and send to random workers
+    for (let i = 0; i < chunks.length; i++) {
+        // Select random workers for this chunk (based on replication factor)
+        const targetWorkers = this.selectRandomWorkers(activeWorkers, replicationFactor);
+
+        // Send the chunk to the selected workers
+        for (const worker of targetWorkers) {
+            const workerKey = `${worker.address}:${worker.port}`;
+            const workerSocket = workerSockets[workerKey];
+
+            // Send the chunk to the worker using the pre-established socket
+            await new Promise((resolve) => {
+                workerSocket.emit('store_chunk', {
+                    fileId,
+                    chunkId: i,
+                    chunk: chunks[i]
+                }, (response) => {
+                    if (response.success) {
+                        resolve();
+                    }
+                });
+            });
+        }
+    }
+
+    // Close all worker sockets after the upload is complete
+    for (const workerKey in workerSockets) {
+        workerSockets[workerKey].close();
+        console.log(`Connection to worker ${workerKey} closed.`);
+    }
+    
 
     // Add file to tracker
     this.trackerSocket.emit('store_file', {
@@ -207,7 +228,7 @@ class Worker {
     this.chunks.forEach((fileChunks, fileId) => {
       console.log(`File ID: ${fileId}`);
       fileChunks.forEach((chunk, chunkId) => {
-        console.log(`  Chunk ID: ${chunkId}, Size: ${chunk.length} bytes`);
+        console.log(`Chunk ID: ${chunkId}, Size: ${chunk.length} bytes`);
       });
     });
   }
@@ -216,10 +237,9 @@ class Worker {
   listStoredFiles() {
     this.trackerSocket.emit('list_files', (files) => {
       console.log('Stored files:', files);
-      files[0].forEach((file, fileId) => {
-        console.log(`File ID: ${fileId}, Name: ${file.fileName}, Size: ${file.fileSize} bytes`);
+      files.forEach((file, index) => {
+        console.log(`File ID: ${file.fileId}, Name: ${file.fileName}, Size: ${file.fileSize} bytes`);
       });
-      
     });
   }
 
