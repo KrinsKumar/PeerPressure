@@ -19,6 +19,27 @@ let files = new Map();
 
 await client.connect();
 
+setInterval(async () => {
+  console.log("Pinging all workers...");
+
+  for (const worker of workers) {
+    try {
+      console.log(`Pinging worker ${worker.id} at ${worker.route}/heartbeat`);
+
+      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 });
+
+      if (response.status === 200) {
+        worker.status = "active";  // Set status to active if the ping is successful
+        worker.lastSeen = new Date();  // Update the last seen timestamp
+        console.log(`Worker ${worker.id} is active.`);
+      }
+    } catch (error) {
+      worker.status = "inactive";  // Set status to inactive if the ping fails
+      console.error(`Worker ${worker.id} is not reachable. Error:`, error.message);
+    }
+  }
+}, 7000); 
+
 // get all workers
 app.get("/worker", async (req, res) => {
   console.log("Getting all workers");
