@@ -14,6 +14,7 @@ client.on("error", (err) => console.error("Redis Client Error", err));
 
 let workers = [];
 let files = new Map();
+let fileHashToChunkHash = new Map();
 
 await client.connect();
 
@@ -117,6 +118,25 @@ app.get("/files/:id/chunks", async (req, res) => {
   let fileId = req.params.id;
   const files = await getFileChunks(client, fileId);
   res.json(files);
+});
+
+// Store the chunk hashes
+app.post("/chunks/:id/hash", async (req, res) => {
+  const { chunkHashes } = req.body;
+  const fileHash = req.params.id;
+    try {
+      fileHashToChunkHash[fileHash] = chunkHashes;
+    } catch (e) {
+        res.status(400).send("Please provide all the fields");
+        return;
+    }
+    console.log("Adding a chunk hash", fileHash, chunkHashes);
+    res.json({ fileHash, chunkHashes });
+});
+
+// Get the chunk hashes
+app.get("/chunks/:id/hash", async (req, res) => {
+  return res.json(fileHashToChunkHash[req.params.id]);
 });
 
 // // add all the chunks that a file has
