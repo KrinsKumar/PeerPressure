@@ -13,6 +13,7 @@ await client.connect();
 
 this.workers = new Map();
 this.files = new Map();
+this.workers = new Map();
 
 // get all workers
 app.get("/worker", async (req, res) => {
@@ -80,6 +81,19 @@ app.post("/files/:id/chunks", async (req, res) => {
   }
   if (await addFileChunks(client, fileId, chunks)) {
     res.json({ fileId, chunks });
+
+    for (let chunk of chunks) {
+      // chunk: [worker1, worker2, worker3]
+      for (let worker of chunk) {
+        let workerChunks = workers[worker];
+        if (!workerChunks) {
+          workerChunks = [];
+          workers[worker] = workerChunks;
+        }
+        workerChunks.push(chunk);
+        workers[worker] = workerChunks;
+      }
+    }
   } else {
     res.status(400).send("Could not add the chunks");
   }
@@ -164,3 +178,5 @@ app.get("*", (req, res) => {
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
+
+U;
