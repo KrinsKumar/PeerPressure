@@ -65,6 +65,8 @@ class Worker {
 
     }
 
+    
+
     private setupEventListeners() {
         this.server.on("connection", (socket) => {
             console.log(`New connection on port ${this.port}`);
