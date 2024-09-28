@@ -21,9 +21,11 @@ export const NodeSelector = ({ isOpen, setIsOpen, selected, onSelect }: NodeSele
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" >
-          {selected || "Select a Node"}
-        </Button>
+        <div className="grow basis-0 flex justify-end">
+          <Button variant="secondary">
+            {selected || "Select a Node"}
+          </Button>
+        </div>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

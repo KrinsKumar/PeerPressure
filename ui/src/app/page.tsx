@@ -5,6 +5,7 @@ import { useState } from "react"
 import { FileUploader } from "@/components/ui/upload"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { NodeSelector } from "@/components/ui/node"
+import { FileManager } from "@/components/ui/file-manager"
 
 export default function Home() {
   const [isFileUploaderOpen, setIsFileUploaderOpen] = useState(false);
@@ -47,9 +48,9 @@ export default function Home() {
   }
 
   return (
-     <Tabs className="w-full container mx-auto" defaultValue="upload">
+     <Tabs className="w-full container mx-auto px-10" defaultValue="upload">
       <div className="flex flex-row justify-between my-4">
-        <span>qtor</span>
+        <span className="grow basis-0">qtor</span>
         <TabsList>
           <TabsTrigger value="upload" className="w-40">Upload</TabsTrigger>
           <TabsTrigger value="files" className="w-40">Files</TabsTrigger>
@@ -74,6 +75,9 @@ export default function Home() {
             handleFileInput={handleFileInput}
           />
         </div>
+      </TabsContent>
+      <TabsContent value="files">
+        <FileManager/>
       </TabsContent>
      </Tabs>
   );
