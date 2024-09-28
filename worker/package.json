@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "node src/server.js"
   },
   "keywords": [],
@@ -14,5 +14,8 @@
     "http": "0.0.1-security",
     "socket.io": "^4.8.0"
   },
-  "packageManager": "pnpm@9.1.2+sha1.907f57a52517de34399d66401bf220a549e47b57"
+  "packageManager": "pnpm@9.1.2+sha1.907f57a52517de34399d66401bf220a549e47b57",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }
