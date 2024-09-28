@@ -103,8 +103,13 @@ class Worker {
   }
 
   private retrieveChunk(fileId: string, chunkId: number): Buffer | null {
-    if (this.chunks.has(fileId) && this.chunks.get(fileId)!.has(chunkId)) {
-      return this.chunks.get(fileId)!.get(chunkId)!;
+    console.log(this.chunks.has(fileId), this.chunks.get(fileId));
+    console.log(this.chunks.get(fileId)!.has(Number(chunkId)));
+    if (
+      this.chunks.has(fileId) &&
+      this.chunks.get(fileId)!.has(Number(chunkId))
+    ) {
+      return this.chunks.get(fileId)!.get(Number(chunkId))!;
     }
     return null;
   }
@@ -230,21 +235,19 @@ class Worker {
 
   async downloadFile(fileId: string, outputPath: string) {
     const chunks: (Buffer | null)[] = [];
-    const fileChunks = await this.getFileChunks(fileId);
+    const fileChunks: any = await this.getFileChunks(fileId);
 
     console.log("retrieving file with ID: ", fileId);
 
-    for (const chunkId of fileChunks) {
-      const locations = await this.getChunkLocations(fileId, chunkId);
+    for (const chunkId of Object.keys(fileChunks)) {
+      const locations = fileChunks[chunkId];
       if (locations.length === 0) {
         console.error(`Chunk ${chunkId} of file ${fileId} not found`);
         return;
       }
-      console.log("trying to retrieve chunk");
+      console.log("trying to retrieve chunk from: ");
       const chunk = await new Promise<Buffer>((resolve) => {
-        const nodeSocket = ioClient(
-          `http://${locations[0].address}:${locations[0].port}`
-        );
+        const nodeSocket = ioClient(`${locations[0]}`);
         nodeSocket.emit(
           "retrieve_chunk",
           { fileId, chunkId },
@@ -253,8 +256,8 @@ class Worker {
           }
         );
       });
-
-      chunks[chunkId] = chunk;
+      console.log("chunk retrieved: ", chunk);
+      chunks[Number(chunkId)] = chunk;
     }
 
     const validChunks = chunks.filter(Boolean) as Buffer[];
@@ -302,11 +305,11 @@ class Worker {
     });
   }
 
-  private getFileChunks(fileId: string): Promise<number[]> {
+  private getFileChunks(fileId: string): Promise<{ string: string[] }> {
     return new Promise((resolve) => {
-      this.trackerSocket.emit("get_file_chunks", fileId, (chunks: number[]) => {
-        resolve(chunks);
-      });
+      fetch(`${TRACKER_URL}/files/${fileId}/chunks`)
+        .then((response) => response.json())
+        .then((data) => resolve(data));
     });
   }
 
