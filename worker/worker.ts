@@ -12,15 +12,28 @@ interface ChunkData {
   fileId: string;
   chunkId: number;
   chunk: Buffer;
+  fileId: string;
+  chunkId: number;
+  chunk: Buffer;
 }
 
 interface WorkerInfo {
   host: string;
   port: number;
   route: string;
+  host: string;
+  port: number;
+  route: string;
 }
 
 class Worker {
+  private server: Server;
+  private chunks: Map<string, Map<number, Buffer>>;
+  private host: string;
+  private port: number;
+  private address: string;
+  private trackerAddress: string;
+  private expressApp: express.Application;
   private server: Server;
   private chunks: Map<string, Map<number, Buffer>>;
   private host: string;
@@ -42,7 +55,24 @@ class Worker {
     this.address = `http://${this.host}:${this.port}`;
     console.log(`Worker started on port ${port}`);
     this.expressApp = express();
+  constructor(
+    host: string,
+    port: number,
+    trackerHost: string,
+    trackerPort: number
+  ) {
+    this.trackerAddress = `http://${trackerHost}:${trackerPort}`;
+    this.host = host;
+    this.port = port;
+    this.chunks = new Map();
+    this.address = `http://${this.host}:${this.port}`;
+    console.log(`Worker started on port ${port}`);
+    this.expressApp = express();
 
+    // Start the Express server for heartbeat
+    const httpServer = this.expressApp.listen(this.port, () => {
+      console.log(`Heartbeat server listening on port ${this.port}`);
+    });
     // Start the Express server for heartbeat
     const httpServer = this.expressApp.listen(this.port, () => {
       console.log(`Heartbeat server listening on port ${this.port}`);
@@ -79,7 +109,32 @@ class Worker {
           callback({ success: true });
         }
       );
+  private setupEventListeners() {
+    this.server.on("connection", (socket) => {
+      console.log(`New connection on port ${this.port}`);
+      socket.on(
+        "store_chunk",
+        (
+          data: ChunkData,
+          callback: (response: { success: boolean }) => void
+        ) => {
+          this.storeChunk(data.fileId, data.chunkId, data.chunk);
+          callback({ success: true });
+        }
+      );
 
+      socket.on(
+        "retrieve_chunk",
+        (
+          data: { fileId: string; chunkId: number },
+          callback: (chunk: Buffer | null) => void
+        ) => {
+          const chunk = this.retrieveChunk(data.fileId, data.chunkId);
+          callback(chunk);
+        }
+      );
+    });
+  }
       socket.on(
         "retrieve_chunk",
         (
@@ -112,6 +167,12 @@ class Worker {
     });
   }
 
+  private storeChunk(fileId: string, chunkId: number, chunk: Buffer) {
+    if (!this.chunks.has(fileId)) {
+      this.chunks.set(fileId, new Map());
+    }
+    this.chunks.get(fileId)!.set(chunkId, chunk);
+  }
   private storeChunk(fileId: string, chunkId: number, chunk: Buffer) {
     if (!this.chunks.has(fileId)) {
       this.chunks.set(fileId, new Map());
@@ -163,7 +224,20 @@ class Worker {
 
     const activeWorkers: WorkerInfo[] = await this.getActiveWorkers();
     const replicationFactor = Math.ceil(activeWorkers.length / 2);
+    const activeWorkers: WorkerInfo[] = await this.getActiveWorkers();
+    const replicationFactor = Math.ceil(activeWorkers.length / 2);
 
+    const workerSockets: { [key: string]: ClientSocket } = {};
+    console.log("active workers: ", activeWorkers);
+    for (const worker of activeWorkers) {
+      if (worker.route !== this.address) {
+        const workerSocket = ioClient(`${worker.route}`);
+        workerSockets[`${worker.route}`] = workerSocket;
+      }
+    }
+    const filteredWorkers = activeWorkers.filter(
+      (worker) => worker.route !== this.address
+    );
     const workerSockets: { [key: string]: ClientSocket } = {};
     console.log("active workers: ", activeWorkers);
     for (const worker of activeWorkers) {
@@ -211,7 +285,42 @@ class Worker {
         });
       }
     }
+      for (const worker of targetWorkers) {
+        chunkDistribution[i].push(worker.route);
+        const workerKey = worker.route;
+        const workerSocket = workerSockets[workerKey];
+        await new Promise<void>((resolve) => {
+          workerSocket.emit(
+            "store_chunk",
+            {
+              fileId,
+              chunkId: i,
+              chunk: chunks[i],
+            },
+            (response: { success: boolean }) => {
+              if (response.success) {
+                resolve();
+              }
+            }
+          );
+        });
+      }
+    }
 
+    // Send chunk distribution data to tracker
+    fetch(`${this.trackerAddress}/files/${fileId}/chunks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        chunk: { fileId: chunkDistribution },
+      }),
+    })
+      .then((response) => response.json())
+      .catch((error) =>
+        console.error("Error sending chunk distribution to tracker:", error)
+      );
     // Send chunk distribution data to tracker
     fetch(`${this.trackerAddress}/files/${fileId}/chunks`, {
       method: "POST",
@@ -263,7 +372,26 @@ class Worker {
       .catch((error) =>
         console.error("Error sending file metadata to tracker:", error)
       );
+    // Send file metadata to tracker
+    fetch(`${this.trackerAddress}/files`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fileHash: fileId,
+        fileName: path.basename(filePath),
+        size: fileContent.length,
+      }),
+    })
+      .then((response) => response.json())
+      .catch((error) =>
+        console.error("Error sending file metadata to tracker:", error)
+      );
 
+    console.log(`File uploaded with ID: ${fileId}`);
+    return fileId;
+  }
     console.log(`File uploaded with ID: ${fileId}`);
     return fileId;
   }
@@ -275,7 +403,21 @@ class Worker {
         .then((data) => resolve(data));
     });
   }
+  private async getActiveWorkers(): Promise<WorkerInfo[]> {
+    return new Promise((resolve) => {
+      fetch(`${this.trackerAddress}/worker`)
+        .then((response) => response.json())
+        .then((data) => resolve(data));
+    });
+  }
 
+  private selectRandomWorkers(
+    workers: WorkerInfo[],
+    count: number
+  ): WorkerInfo[] {
+    const shuffled = workers.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
   private selectRandomWorkers(
     workers: WorkerInfo[],
     count: number
@@ -292,6 +434,7 @@ class Worker {
     let FAIL_NOW = true;
     let hash = "!!!!!!";
 
+    console.log("retrieving file with ID: ", fileId);
     console.log("retrieving file with ID: ", fileId);
 
     for (const chunkId of Object.keys(fileChunks)) {
@@ -335,7 +478,12 @@ class Worker {
     }
 
     const validChunks = chunks.filter(Boolean) as Buffer[];
+    const validChunks = chunks.filter(Boolean) as Buffer[];
 
+    if (validChunks.length === 0) {
+      console.error("No valid chunks retrieved for the file.");
+      return;
+    }
     if (validChunks.length === 0) {
       console.error("No valid chunks retrieved for the file.");
       return;
@@ -361,13 +509,25 @@ class Worker {
     }
     return chunks;
   }
+  private splitIntoChunks(buffer: Buffer): Buffer[] {
+    const chunks: Buffer[] = [];
+    const chunkSize = 512;
+    for (let i = 0; i < buffer.length; i += chunkSize) {
+      chunks.push(buffer.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
 
+  private verifyFileIntegrity(fileContent: Buffer, fileId: string) {
+    const hash = crypto.createHash("sha256").update(fileContent).digest("hex");
+    console.log(`File integrity check:
   private verifyFileIntegrity(fileContent: Buffer, fileId: string) {
     const hash = crypto.createHash("sha256").update(fileContent).digest("hex");
     console.log(`File integrity check:
       File ID: ${fileId}
       SHA-256 Hash: ${hash}
     `);
+  }
   }
 
   private getFileChunks(fileId: string): Promise<{ string: string[] }> {
@@ -396,7 +556,43 @@ class Worker {
       });
     });
   }
+  private listStoredChunks() {
+    console.log("Stored chunks:");
+    this.chunks.forEach((fileChunks, fileId) => {
+      console.log(`File ID: ${fileId}`);
+      fileChunks.forEach((chunk, chunkId) => {
+        console.log(`Chunk ID: ${chunkId}, Size: ${chunk.length} bytes`);
+      });
+    });
+  }
 
+  private listStoredFiles() {
+    console.log("Fetching stored files from tracker...");
+    fetch(`${this.trackerAddress}/files`)
+      .then((response) => response.json())
+      .then((files) => {
+        console.log("Stored files:");
+        Object.entries(files).forEach(([fileId, fileInfo]) => {
+          if (
+            typeof fileInfo === "object" &&
+            fileInfo !== null &&
+            "fileName" in fileInfo &&
+            "size" in fileInfo
+          ) {
+            console.log(
+              `File ID: ${fileId}, Name: ${fileInfo.fileName}, Size: ${fileInfo.size} bytes`
+            );
+          } else {
+            console.log(
+              `File ID: ${fileId}, Info: ${JSON.stringify(fileInfo)}`
+            );
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching stored files:", error);
+      });
+  }
   private listStoredFiles() {
     console.log("Fetching stored files from tracker...");
     fetch(`${this.trackerAddress}/files`)
