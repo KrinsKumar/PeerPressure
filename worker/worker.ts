@@ -36,11 +36,11 @@ class Worker {
     trackerHost: string,
     trackerPort: number
   ) {
-    this.trackerAddress = `http://bore.pub:18637`;
+    this.trackerAddress = `http://${trackerHost}:${trackerPort}`;
     this.host = host;
     this.port = port;
     this.chunks = new Map();
-    this.address = `http://bore.pub:48863`;
+    this.address = `http://${host}:${port}`;
     console.log(`Worker started on port ${port}`);
     this.expressApp = express();
 
@@ -504,9 +504,14 @@ class Worker {
 }
 
 // Usage
-const TRACKER_HOST = process.env.TRACKER_HOST || "localhost";
-const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000;
-const WORKER_HOST = process.env.WORKER_HOST || "localhost";
-const WORKER_PORT = Number(process.env.WORKER_PORT) || 3032;
+const args = process.argv.slice(2); // Get CLI arguments
+
+// Default values if not provided via CLI
+const TRACKER_HOST = args[0] || process.env.TRACKER_HOST || "localhost";
+const TRACKER_PORT = Number(args[1]) || Number(process.env.TRACKER_PORT) || 3000;
+const WORKER_HOST = args[2] || process.env.WORKER_HOST || "localhost";
+const WORKER_PORT = Number(args[3]) || Number(process.env.WORKER_PORT) || 3032;
+
 const worker = new Worker(WORKER_HOST, WORKER_PORT, TRACKER_HOST, TRACKER_PORT);
 worker.cli();
+
