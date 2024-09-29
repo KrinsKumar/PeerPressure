@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button"
+import { X, FileText } from "lucide-react"
 
 // a little function to help us with reordering the result
 const reorder = (list, startIndex, endIndex) => {
@@ -100,7 +102,8 @@ export class FileManager extends Component {
             id: "3",
             content: "lion king",
           }
-        ]
+        ],
+        expanded: null,
     };
 
     /**
@@ -152,6 +155,10 @@ export class FileManager extends Component {
         }
     };
 
+    onSelect = (selected) => {
+      this.setState({...this.state, expanded: selected})
+    }
+
     // Normally you would want to split things out into separate components.
     // But in this example everything is just done in one place for simplicity
     render() {
@@ -197,6 +204,7 @@ export class FileManager extends Component {
                                                   ref={provided.innerRef}
                                                   {...provided.draggableProps}
                                                   {...provided.dragHandleProps}
+                                                  onClick={() => this.onSelect(item)}
                                                   style={getItemStyle(
                                                       snapshot.isDragging,
                                                       provided.draggableProps.style
@@ -235,6 +243,7 @@ export class FileManager extends Component {
                                                   ref={provided.innerRef}
                                                   {...provided.draggableProps}
                                                   {...provided.dragHandleProps}
+                                                  onClick={() => this.onSelect(item)}
                                                   style={getItemStyle(
                                                       snapshot.isDragging,
                                                       provided.draggableProps.style
@@ -251,6 +260,43 @@ export class FileManager extends Component {
                     </ScrollArea>
                   </CardContent>
                 </Card>
+                {this.state.expanded ? (
+                  <Card className="w-[700px]">
+                    <CardHeader>
+                      <CardTitle className="flex justify-between items-center">
+                        File Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4" />
+                          <span>{this.state.expanded.content}</span>
+                        </div>
+                        {this.state.expanded.downloadedAt && (
+                          <div>
+                            <span>Downloaded at:</span> {new Date(this.state.expanded.downloadedAt).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="w-[700px]">
+                    <CardHeader>
+                      <CardTitle className="flex justify-between items-center">
+                        File Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-muted">Select a file to get started.</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </DragDropContext>
         );
