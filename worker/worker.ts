@@ -144,7 +144,7 @@ class Worker {
     const chunks = this.splitIntoChunks(fileContent);
 
     const activeWorkers: WorkerInfo[] = await this.getActiveWorkers();
-    const replicationFactor = Math.ceil(activeWorkers.length / 2);
+    const replicationFactor = 2;
 
     const workerSockets: { [key: string]: ClientSocket } = {};
     console.log("active workers: ", activeWorkers);
