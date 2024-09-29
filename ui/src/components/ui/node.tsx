@@ -20,6 +20,8 @@ interface NodeSelectorProps {
   onSelect: (address: string) => void
 }
 
+const NEXT_PUBLIC_TRACKER_ADDRESS = process.env.NEXT_PUBLIC_TRACKER_ADDRESS;
+
 export default function NodeSelector({ isOpen, setIsOpen, selected, onSelect }: NodeSelectorProps) {
   const [workers, setWorkers] = useState<Worker[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -29,7 +31,7 @@ export default function NodeSelector({ isOpen, setIsOpen, selected, onSelect }: 
   useEffect(() => {
     const fetchWorkers = async () => {
       try {
-        const response = await fetch('http://localhost:3000/workers')
+        const response = await fetch(`${NEXT_PUBLIC_TRACKER_ADDRESS}/worker`)
         if (!response.ok) {
           throw new Error('Failed to fetch workers')
         }

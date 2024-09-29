@@ -43,7 +43,7 @@ const getListStyle = isDraggingOver => ({
 })
 
 const getAllFilesInSystem = () => {
-  return fetch(`http://localhost:3000/files`)
+  return fetch(`${NEXT_PUBLIC_TRACKER_ADDRESS}/files`)
     .then((response) => response.json())
     .then((files) => {
       return Object.entries(files).map(([fileId, fileInfo]) => ({
