@@ -2,13 +2,18 @@ import express from "express";
 import { createClient } from "redis";
 import { addFileChunks, getFileChunks } from "./database.js";
 import cors from "cors";
+import readline from "readline"; // CLI integration
+import axios from "axios";
+
+const REDIS_HOST = process.env.REDIS_HOST || "localhost"
+const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379
+const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 const client = createClient({
-  url: "redis://localhost:6379",
+  url: `redis://${REDIS_HOST}:${REDIS_PORT}`,
 });
 client.on("error", (err) => console.error("Redis Client Error", err));
 
@@ -19,6 +24,27 @@ let nodeToChunkHash = new Map();
 let chunkHashToNode = new Map();
 
 await client.connect();
+
+setInterval(async () => {
+  console.log("Pinging all workers...");
+
+  for (const worker of workers) {
+    try {
+      console.log(`Pinging worker ${worker.id} at ${worker.route}/heartbeat`);
+
+      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 });
+
+      if (response.status === 200) {
+        worker.status = "active";  // Set status to active if the ping is successful
+        worker.lastSeen = new Date();  // Update the last seen timestamp
+        console.log(`Worker ${worker.id} is active.`);
+      }
+    } catch (error) {
+      worker.status = "inactive";  // Set status to inactive if the ping fails
+      console.error(`Worker ${worker.id} is not reachable. Error:`, error.message);
+    }
+  }
+}, 7000); 
 
 // get all workers
 app.get("/worker", async (req, res) => {
@@ -75,7 +101,12 @@ app.post("/files", async (req, res) => {
 app.get("/files/:id", async (req, res) => {
   let fileId = req.params.id;
   let file = files[fileId];
-  res.json(file);
+  if (file) {
+    res.status(200).json(file);
+  } else {
+    res.status(404).json({ error: "File not found" });
+  }
+  return;
 });
 
 // get all the files
@@ -97,19 +128,6 @@ app.post("/files/:id/chunks", async (req, res) => {
   }
   if (await addFileChunks(client, fileHash, chunks)) {
     res.json({ fileHash, chunks });
-
-    // for (let chunk of chunks.keys) {
-    //   // chunk: [worker1, worker2, worker3]
-    //   for (let worker of chunk) {
-    //     let workerChunks = workers[worker];
-    //     if (!workerChunks) {
-    //       workerChunks = [];
-    //       workers[worker] = workerChunks;
-    //     }
-    //     workerChunks.push(chunk);
-    //     workers[worker] = workerChunks;
-    //   }
-    // }
   } else {
     res.status(400).send("Could not add the chunks");
   }
@@ -248,6 +266,64 @@ app.get("*", (req, res) => {
 });
 
 // listen to the port
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+app.listen(TRACKER_PORT, () => {
+  console.log(`Server is running on port ${TRACKER_PORT}`);
+});
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+console.log("Tracker CLI:");
+console.log("Available commands:");
+console.log("- 1: Fetch all workers");
+console.log("- 2: Fetch all files");
+console.log("- 3: Fetch chunks for a file");
+console.log("- 4: Exit");
+
+
+rl.on("line", async (input) => {
+  const [command] = input.trim().split(" ");
+
+  switch (command) {
+    case "1":
+      console.log("Fetching all workers...");
+      try {
+        const { data } = await axios.get("http://localhost:3000/worker");
+        console.log("Workers:", data);
+      } catch (error) {
+        console.error("Error fetching workers:", error.message);
+      }
+      break;
+
+    case "2":
+      console.log("Fetching all files...");
+      try {
+        const { data } = await axios.get("http://localhost:3000/files");
+        console.log("Files:", data);
+      } catch (error) {
+        console.error("Error fetching files:", error.message);
+      }
+      break;
+
+    case "3":
+      rl.question("Enter the file ID to fetch chunks: ", async (fileId) => {
+        try {
+          const { data } = await axios.get(`http://localhost:3000/files/${fileId}/chunks`);
+          console.log(`Chunks for file ${fileId}:`, data);
+        } catch (error) {
+          console.error("Error fetching file chunks:", error.message);
+        }
+      });
+      break;
+
+    case "4":
+      console.log("Exiting...");
+      rl.close();
+      break;
+
+    default:
+      console.log("Unknown command. Please enter a valid number.");
+  }
 });

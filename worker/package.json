@@ -18,6 +18,7 @@
   },
   "packageManager": "pnpm@9.1.2+sha1.907f57a52517de34399d66401bf220a549e47b57",
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   }
