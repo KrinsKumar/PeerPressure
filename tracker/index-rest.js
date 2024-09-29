@@ -95,7 +95,12 @@ app.post("/files", async (req, res) => {
 app.get("/files/:id", async (req, res) => {
   let fileId = req.params.id;
   let file = files[fileId];
-  res.json(file);
+  if (file) {
+    res.status(200).json(file);
+  } else {
+    res.status(404).json({ error: "File not found" });
+  }
+  return;
 });
 
 // get all the files
