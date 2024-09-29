@@ -118,8 +118,8 @@ export class FileManager extends Component {
   render() {
     return (
       <DragDropContext onDragEnd={this.onDragEnd}>
-        <div className="flex flex-col md:flex-row gap-4 p-4 max-w-[1200px] mx-auto">
-          <Card className="w-full md:w-1/3">
+        <div className="flex flex-row gap-4 h-fit">
+          <Card className="h-full w-full">
             <CardHeader>
               <CardTitle>Available Files</CardTitle>
             </CardHeader>
@@ -145,7 +145,7 @@ export class FileManager extends Component {
                               )}
                               className="truncate cursor-pointer hover:bg-gray-100"
                             >
-                              {item.content}
+                              {item.content.length > 40 ? `${item.content.slice(0, 37)}...` : item.content}
                             </div>
                           )}
                         </Draggable>
@@ -157,7 +157,7 @@ export class FileManager extends Component {
               </ScrollArea>
             </CardContent>
           </Card>
-          <Card className="w-full md:w-1/3">
+          <Card className="h-full w-full">
             <CardHeader>
               <CardTitle>Downloaded Files</CardTitle>
             </CardHeader>
@@ -195,7 +195,7 @@ export class FileManager extends Component {
               </ScrollArea>
             </CardContent>
           </Card>
-          <Card className="w-full md:w-1/3">
+          <Card className="w-[700px]">
             <CardHeader>
               <CardTitle>File Information</CardTitle>
             </CardHeader>
@@ -204,7 +204,7 @@ export class FileManager extends Component {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <FileText className="h-5 w-5 text-blue-500" />
-                    <span className="font-medium text-lg">{this.state.expanded.content}</span>
+                    <span className="font-medium text-lg">{this.state.expanded.content.length > 20 ? `${this.state.expanded.content.slice(0, 17)}...` : this.state.expanded.content}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Ruler className="h-5 w-5 text-green-500" />
@@ -218,8 +218,8 @@ export class FileManager extends Component {
                   )}
                 </div>
               ) : (
-                <div className="text-center text-gray-500">
-                  Select a file to view its information
+                <div className="text-gray-500">
+                  Select a file for more information
                 </div>
               )}
             </CardContent>
