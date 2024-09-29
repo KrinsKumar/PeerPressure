@@ -288,6 +288,11 @@ class Worker {
 
       for (const location of locations) {
         // console.log(location);
+        const isOpen = await this.checkIfLocationOpen(location);
+        if (!isOpen) {
+          console.error(`Location ${location} is not open.`);
+          continue; // Skip to the next location if it's not open
+        }
         const chunk = await new Promise<Buffer>((resolve) => {
           const nodeSocket = ioClient(`${location}`);
           nodeSocket.emit(
@@ -411,6 +416,47 @@ class Worker {
         console.error("Error fetching stored files:", error);
       });
   }
+
+  private async checkIfLocationOpen(location: string, maxRetries = 1): Promise<boolean> {
+    let retries = 0;
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    while (retries < maxRetries) {
+      const isOpen = await new Promise<boolean>((resolve) => {
+        const socket = ioClient(location, {
+          timeout: 5000, // 5 second timeout
+        });
+
+        socket.on("connect", () => {
+          console.log(`Location is open: ${location}`);
+          resolve(true); // Location is open
+          socket.disconnect();
+        });
+
+        socket.on("connect_error", (err) => {
+          console.log(`Failed to connect to location: ${location}`);
+          resolve(false); // Location is not open or unreachable
+          socket.disconnect(); // Ensure disconnection
+        });
+
+        socket.on("disconnect", () => {
+          resolve(false); // Disconnected
+        });
+      });
+
+      if (isOpen) return true;
+
+      retries++;
+      if (retries < maxRetries) {
+        console.log(`Retrying connection to ${location} (${retries}/${maxRetries})...`);
+        await delay(1000); // Delay 1 second before retrying
+      }
+    }
+
+    console.log(`Max retries reached for location: ${location}`);
+    return false; // Location couldn't be reached after retries
+  }
+
 
   cli() {
     const rl = readline.createInterface({
