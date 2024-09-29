@@ -119,7 +119,9 @@ class Worker {
             console.log(`File not found: ${filePath}`);
             return "";
         }
-        const fileContent = fs.readFileSync(filePath);
+
+        const fileContent = zlib.deflateSync(fs.readFileSync(filePath));
+        // const fileContent =fs.readFileSync(filePath);
         const fileId = crypto
             .createHash("sha256")
             .update(fileContent)
