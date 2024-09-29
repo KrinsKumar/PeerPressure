@@ -32,7 +32,7 @@ export const NodeSelector = ({ isOpen, setIsOpen, selected, onSelect }: NodeSele
           <DialogTitle>Select a Node</DialogTitle>
         </DialogHeader>
         <form action={onSubmit} className="flex flex-col" name="node-selector" >
-          <Input name="address" placeholder="localhost:3000" />
+          <Input name="address" placeholder="http://localhost:3000" />
         </form>
         <div className="flex flex-row justify-end gap-1 mt-2">
           <Button onClick={() => setIsOpen(false)}>Cancel</Button>

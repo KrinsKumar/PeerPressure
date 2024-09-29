@@ -7,6 +7,8 @@ import * as path from "path";
 import express from "express";
 import { Request, Response } from "express";
 import * as zlib from "zlib";
+import cors from "cors";
+import fileUpload from "express-fileupload";
 
 interface ChunkData {
   fileId: string;
@@ -42,6 +44,8 @@ class Worker {
     this.address = `http://${this.host}:${this.port}`;
     console.log(`Worker started on port ${port}`);
     this.expressApp = express();
+    this.expressApp.use(cors());
+    this.expressApp.use(fileUpload());
 
     // Start the Express server for heartbeat
     const httpServer = this.expressApp.listen(this.port, () => {
@@ -101,10 +105,11 @@ class Worker {
 
   private setupUiSubmission() {
     this.expressApp.post("/file", (req: Request, res: Response) => {
-      console.log('ui sub')
-      console.log(req)
-      const { file } = req.body;
-      const fileId = crypto.createHash("sha256").update(file).digest("hex");
+      const file: any = req.files?.file;
+      if (file === undefined || Array.isArray(file)) {
+        return;
+      }
+      const fileId = crypto.createHash("sha256").update(Buffer.from(file)).digest("hex");
       this.uploadFile(fileId, file);
     });
 
