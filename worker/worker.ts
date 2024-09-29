@@ -105,15 +105,13 @@ class Worker {
 
   private setupUiSubmission() {
     this.expressApp.post("/file", (req: Request, res: Response) => {
-      // console.log("req: ", req);
-      // console.log("file: ", req.files);
-      console.log("file: ", (req.files?.file as any)?.data);
+      console.log(req.body.filename)
       const file: any = req.files?.file;
       if (file === undefined || Array.isArray(file)) {
         return;
       }
       const fileId = crypto.createHash("sha256").update(Buffer.from(file.data)).digest("hex");
-      this.uploadFile(fileId, file);
+      this.uploadFile(undefined, file, req.body.filename);
     });
 
     this.expressApp.get("/file/:fileId", (req: Request, res: Response) => {
@@ -142,8 +140,9 @@ class Worker {
     return null;
   }
 
-  async uploadFile(filePath: string, file?: any): Promise<string> {
+  async uploadFile(filePath?: string, file?: any, fileName?: string): Promise<string> {
     let fileContent;
+    filePath = filePath || "";
     if (file) {
       // convert file into buffer
       fileContent = Buffer.from(file.data);
@@ -268,7 +267,7 @@ class Worker {
       },
       body: JSON.stringify({
         fileHash: fileId,
-        fileName: path.basename(filePath),
+        fileName: fileName || path.basename(filePath),
         size: fileContent.length,
       }),
     })

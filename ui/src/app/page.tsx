@@ -52,6 +52,7 @@ export default function Home() {
     }
     const fd = new FormData()
     fd.append('file', files[0])
+    fd.append('filename', files[0].name)
     console.log(`${address}/file`)
     fetch(`${address}/file`, {
       method: "POST",
