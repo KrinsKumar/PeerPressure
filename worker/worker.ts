@@ -113,6 +113,10 @@ class Worker {
     }
 
     async uploadFile(filePath: string): Promise<string> {
+        if (!fs.existsSync(filePath)) {
+            console.log(`File not found: ${filePath}`);
+            return "";
+        }
         const fileContent = fs.readFileSync(filePath);
         const fileId = crypto
             .createHash("sha256")
