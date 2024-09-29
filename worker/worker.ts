@@ -100,10 +100,15 @@ class Worker {
   }
 
   private setupUiSubmission() {
-    this.expressApp.post("/submitfile", (req: Request, res: Response) => {
+    this.expressApp.post("/file", (req: Request, res: Response) => {
       const { file } = req.body;
       const fileId = crypto.createHash("sha256").update(file).digest("hex");
       this.uploadFile(fileId, file);
+    });
+
+    this.expressApp.get("/file/:fileId", (req: Request, res: Response) => {
+      const { fileId } = req.params;
+      let file = this.downloadFile(fileId, "return------<><><><>");
     });
   }
 
@@ -339,6 +344,11 @@ class Worker {
     const fileContent = Buffer.concat(validChunks);
     this.verifyFileIntegrity(fileContent, fileId);
     const decompressedContent = zlib.inflateSync(fileContent);
+
+    if (outputPath == "return------<><><><>") {
+      return decompressedContent;
+    }
+
     fs.writeFileSync(outputPath, decompressedContent);
     console.log(`File downloaded to ${outputPath}`);
   }
@@ -514,6 +524,6 @@ class Worker {
 const TRACKER_HOST = process.env.TRACKER_HOST || "localhost";
 const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000;
 const WORKER_HOST = process.env.WORKER_HOST || "localhost";
-const WORKER_PORT = Number(process.env.WORKER_PORT) || 3004;
+const WORKER_PORT = Number(process.env.WORKER_PORT) || 3050;
 const worker = new Worker(WORKER_HOST, WORKER_PORT, TRACKER_HOST, TRACKER_PORT);
 worker.cli();
