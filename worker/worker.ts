@@ -258,9 +258,11 @@ class Worker {
     const chunks: (Buffer | null)[] = [];
     const fileChunks: any = await this.getFileChunks(fileId);
     const chunkHashes = await this.getChunkHashes(fileId);
+    let hash_flag = true;
+    let correct_chunk = null;
+    let current_location = 0;
 
     console.log("retrieving file with ID: ", fileId);
-
     for (const chunkId of Object.keys(fileChunks)) {
       const locations = fileChunks[chunkId];
       if (locations.length === 0) {
@@ -268,18 +270,38 @@ class Worker {
         return;
       }
       console.log("trying to retrieve chunk from: ");
-      const chunk = await new Promise<Buffer>((resolve) => {
-        const nodeSocket = ioClient(`${locations[0]}`);
-        nodeSocket.emit(
-          "retrieve_chunk",
-          { fileId, chunkId },
-          (chunk: Buffer) => {
-            resolve(chunk);
-          }
+      do {
+        const chunk = await new Promise<Buffer>((resolve) => {
+          const nodeSocket = ioClient(`${locations[current_location]}`);
+          nodeSocket.emit(
+            "retrieve_chunk",
+            { fileId, chunkId },
+            (chunk: Buffer) => {
+              resolve(chunk);
+            }
+          );
+        });
+        const hash = crypto.createHash("sha256").update(chunk).digest("hex");
+        if (hash !== chunkHashes[Number(chunkId)]) {
+          console.error(
+            `Chunk ${chunkId} of file ${fileId} failed integrity check`
+          );
+          current_location++;
+        } else {
+          hash_flag = false;
+          current_location = 0;
+        }
+        correct_chunk = chunk;
+      } while (hash_flag && current_location < locations.length);
+
+      if (locations.length === current_location) {
+        console.error(
+          `Chunk ${chunkId} of file ${fileId} was not found in any of the locations`
         );
-      });
-      console.log("chunk retrieved: ", chunk);
-      chunks[Number(chunkId)] = chunk;
+        return;
+      }
+
+      chunks[Number(chunkId)] = correct_chunk;
     }
 
     const validChunks = chunks.filter(Boolean) as Buffer[];
