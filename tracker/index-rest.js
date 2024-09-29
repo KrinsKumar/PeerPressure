@@ -32,7 +32,7 @@ setInterval(async () => {
     try {
       console.log(`Pinging worker ${worker.id} at ${worker.route}/heartbeat`);
 
-      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 });
+      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 }); // README: request timeout MUST be less than the interval
 
       if (response.status === 200) {
         worker.status = "active";  // Set status to active if the ping is successful
@@ -44,7 +44,7 @@ setInterval(async () => {
       console.error(`Worker ${worker.id} is not reachable. Error:`, error.message);
     }
   }
-}, 7000); 
+}, 15000); 
 
 // get all workers
 app.get("/worker", async (req, res) => {
@@ -262,5 +262,10 @@ rl.on("line", async (input) => {
 
     default:
       console.log("Unknown command. Please enter a valid number.");
+      console.log("Possible commands:");
+      console.log("1: Fetch all workers");
+      console.log("2: Fetch all files");
+      console.log("3: Fetch chunks for a file");
+      console.log("4: Exit");
   }
 });

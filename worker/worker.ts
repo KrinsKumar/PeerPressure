@@ -6,6 +6,8 @@ import * as readline from "readline";
 import * as path from "path";
 import express from "express";
 import { Request, Response } from "express";
+import * as zlib from 'zlib';
+
 
 interface ChunkData {
     fileId: string;
@@ -118,7 +120,9 @@ class Worker {
             console.log(`File not found: ${filePath}`);
             return "";
         }
-        const fileContent = fs.readFileSync(filePath);
+
+        const fileContent = zlib.deflateSync(fs.readFileSync(filePath));
+        // const fileContent =fs.readFileSync(filePath);
         const fileId = crypto
             .createHash("sha256")
             .update(fileContent)
@@ -315,7 +319,8 @@ class Worker {
 
         const fileContent = Buffer.concat(validChunks);
         this.verifyFileIntegrity(fileContent, fileId);
-        fs.writeFileSync(outputPath, fileContent);
+        const decompressedContent = zlib.inflateSync(fileContent);
+        fs.writeFileSync(outputPath, decompressedContent);
         console.log(`File downloaded to ${outputPath}`);
     }
 
@@ -403,8 +408,11 @@ class Worker {
         console.log("3: list_chunks - List all stored chunks");
         console.log("4: list_files - List all stored files");
         console.log("5: exit - Exit the worker");
-        console.log("9: upload ./examples/example.txt - Upload a specific example file");
-        
+        console.log("6: upload_example_text - Upload example text file");
+        console.log("7: upload_example_pic - Upload example picture file");
+        console.log("8: upload_example_sound - Upload example sound file");
+        console.log("9: upload_example_bulk - Upload example bulk file");
+
         rl.on("line", async (input) => {
             const [command, ...args] = input.trim().split(" ");
             
@@ -415,7 +423,10 @@ class Worker {
                 '3': 'list_chunks',
                 '4': 'list_files',
                 '5': 'exit',
-                '9': 'upload_example'
+                '6': 'upload_example_text',
+                '7': 'upload_example_pic',
+                '8': 'upload_example_sound',
+                '9': 'upload_example_bulk',
             } as { [key: string]: string };
         
             // Check if the input is a number shortcut
@@ -446,11 +457,30 @@ class Worker {
                 case "list_files":
                     this.listStoredFiles();
                     break;
+                case "upload_example_text":
+                    await this.uploadFile('./examples/example.txt');
+                    break;
+                case "upload_example_pic":
+                    await this.uploadFile('./examples/pic.jpg');
+                    break;
+                case "upload_example_sound":
+                    await this.uploadFile('./examples/sound.mp3');
+                    break;
                 case "exit":
                     rl.close();
                     break;
                 default:
                     console.log("Unknown command:", actualCommand);
+                    // show possible commands
+                    console.log("Possible commands:");
+                    console.log("1: upload <file_path> - Upload a file");
+                    console.log("2: download <file_id> <output_path> - Download a file");
+                    console.log("3: list_chunks - List all stored chunks");
+                    console.log("4: list_files - List all stored files");
+                    console.log("5: exit - Exit the worker");
+                    console.log("6: upload_example_text - Upload example text file");
+                    console.log("7: upload_example_pic - Upload example picture file");
+                    console.log("8: upload_example_sound - Upload example sound file");
             }
         });
         

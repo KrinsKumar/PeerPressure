@@ -1,0 +1,52 @@
+# Ignore node_modules directory
+node_modules
+
+# Ignore npm debug log
+npm-debug.log
+
+# Ignore pnpm debug log
+pnpm-debug.log
+
+# Ignore .env files
+.env
+.env.*
+
+# Ignore log files
+*.log
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore editor specific files
+.vscode
+.idea
+
+# Ignore test files
+__tests__
+*.test.js
+
+# Ignore documentation
+docs
+
+# Ignore build output
+dist
+build
+
+# Ignore version control files
+.git
+.gitignore
+
+# Ignore Docker related files (except Dockerfile)
+.dockerignore
+docker-compose*.yml
+
+# Ignore scripts directory
+scripts
+
+# Ignore any temporary files
+*.tmp
+*.temp
+
+# Ignore README and other markdown files
+*.md
