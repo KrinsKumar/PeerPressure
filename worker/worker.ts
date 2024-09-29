@@ -30,19 +30,15 @@ class Worker {
   private trackerAddress: string;
   private expressApp: express.Application;
 
-  constructor(
-    host: string,
-    port: number,
-    trackerHost: string,
-    trackerPort: number
-  ) {
-    this.trackerAddress = `http://${trackerHost}:${trackerPort}`;
-    this.host = host;
-    this.port = port;
-    this.chunks = new Map();
-    this.address = `http://${host}:${port}`;
-    console.log(`Worker started on port ${port}`);
-    this.expressApp = express();
+    constructor(host: string, port: number, trackerHost: string, trackerPort: number) {
+        this.trackerAddress = `http://${trackerHost}:${trackerPort}`
+        this.host = host
+        this.port = port;
+        this.chunks = new Map(); 
+        this.address = `http://${this.host}:${this.port}`;
+        console.log(`Worker started on port ${port}`);
+        this.expressApp = express();
+        this.expressApp.use(express.json());
 
     // Start the Express server for heartbeat
     const httpServer = this.expressApp.listen(this.port, () => {
@@ -52,7 +48,7 @@ class Worker {
     this.server = new Server(httpServer);
     this.setupEventListeners();
 
-    this.setupHeartbeat();
+    this.setupExpressRoutes();
     fetch(`${this.trackerAddress}/worker`, {
       method: "POST",
       headers: {
@@ -94,11 +90,51 @@ class Worker {
     });
   }
 
-  private setupHeartbeat() {
-    this.expressApp.get("/heartbeat", (req: Request, res: Response) => {
-      res.status(200).send("OK");
-    });
-  }
+    private setupExpressRoutes() {
+        this.expressApp.get("/heartbeat", (req: Request, res: Response) => {
+            res.status(200).send("OK");
+        });
+
+        this.expressApp.post('/pull_chunk', async (req: Request, res: Response) => {
+            const { actorUrl, fileId, chunkId } = req.body;
+            console.log(`Pulling chunk ${chunkId} from file ${fileId} from actor: ${actorUrl}`);
+            try {
+                // Fetch the chunk from the other actor
+                const chunk = await this.pullChunkFromActor(actorUrl, fileId, chunkId);
+                
+                if (chunk) {
+                    // Store the chunk locally
+                    this.storeChunk(fileId, chunkId, chunk);
+
+                    res.status(200).send({ success: true, message: 'Chunk pulled and stored successfully' });
+                } else {
+                    res.status(404).send({ success: false, message: 'Chunk not found' });
+                }
+            } catch (error) {
+                console.error('Error pulling chunk from actor:', error);
+                res.status(500).send({ success: false, message: 'Error pulling chunk from actor' });
+            }
+        });
+        
+    }
+
+
+    private async pullChunkFromActor(actorUrl: string, fileId: string, chunkId: number): Promise<Buffer | null> {
+        return new Promise<Buffer | null>((resolve, reject) => {
+            console.log("Pulling chunk from actor: ", actorUrl);
+            const socket = ioClient(actorUrl);
+            
+            socket.emit('retrieve_chunk', { fileId, chunkId }, (chunk: Buffer | null) => {
+                socket.close();
+                if (chunk) {
+                    resolve(chunk);
+                } else {
+                    reject(new Error('Chunk not found'));
+                }
+            });
+        });
+    }
+    
 
   private storeChunk(fileId: string, chunkId: number, chunk: Buffer) {
     console.log(fileId, chunkId);
@@ -564,4 +600,3 @@ const WORKER_PORT = Number(args[3]) || Number(process.env.WORKER_PORT) || 3032;
 
 const worker = new Worker(WORKER_HOST, WORKER_PORT, TRACKER_HOST, TRACKER_PORT);
 worker.cli();
-
