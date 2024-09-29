@@ -1,6 +1,6 @@
 import express from "express";
 import { createClient } from "redis";
-import { addFileChunks, getFileChunks } from "./database.js";
+import { addFileChunks, findChunksForNodeAndRedistribute, getFileChunks } from "./database.js";
 import cors from "cors";
 import readline from "readline"; // CLI integration
 import axios from "axios";
@@ -41,10 +41,49 @@ setInterval(async () => {
       }
     } catch (error) {
       worker.status = "inactive";  // Set status to inactive if the ping fails
+      // actually remove the worker from the list
+      workers = workers.filter((w) => w.id !== worker.id);
+
       console.error(`Worker ${worker.id} is not reachable. Error:`, error.message);
+      // STEPS: Gathers the Chunk IDs from the worker and redistributes them to other active workers;
+      const file = await findChunksForNodeAndRedistribute(client, worker.route, workers);
+
+      // Now We have to iterate through the file and redistribute the chunks {fileId: [chunkIds], fileId: [chunkIds]}
+      // STEPS ARE:
+      // 1. Iterate through the file
+      // 2. Iterate through the chunks
+      // 3. Find an active worker that hasn't that chunk
+      // 4. Ask it to pull the chunk
+
+      for (const [fileId, chunkIds] of Object.entries(file)) {
+        for (const chunkId of chunkIds) {
+          const nodes = await client.get(chunkId);
+          const activeWorkers = workers.filter((w) => w.status === "active");
+          const activeWorkersRoutes = activeWorkers.map((w) => w.route);
+
+          // Find a worker that doesn't have the chunk
+          const targetWorker = activeWorkers.find((w) => !nodes.includes(w.route));
+
+          if (targetWorker) {
+            console.log(`Redistributing chunk ${chunkId} from worker ${worker.route} to worker ${targetWorker.route}`);
+            try {
+              await axios.post(`${targetWorker.route}/chunk/${chunkId}`, { fileId, chunkId });
+            } catch (error) {
+              console.error(`Error redistributing chunk ${chunkId} to worker ${targetWorker.route}. Error:`, error.message);
+            }
+          } else {
+            console.log(`No available worker to redistribute chunk ${chunkId} from worker ${worker.route}`);
+          }
+        }
+      }
+
+     
+
+
+      
     }
   }
-}, 15000); 
+}, 7000); 
 
 // get all workers
 app.get("/worker", async (req, res) => {
