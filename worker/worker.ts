@@ -7,8 +7,6 @@ import * as path from "path";
 import express from "express";
 import { Request, Response } from "express";
 
-const TRACKER_URL = process.env.TRACKER_IP || "http://localhost:3000";
-
 interface ChunkData {
     fileId: string;
     chunkId: number;
@@ -16,27 +14,27 @@ interface ChunkData {
 }
 
 interface WorkerInfo {
-    address: string;
+    host: string;
     port: number;
     route: string;
 }
 
 class Worker {
     private server: Server;
-    private trackerSocket: ClientSocket;
     private chunks: Map<string, Map<number, Buffer>>;
-    private address: string;
+    private host: string;
     private port: number;
-    private route: string;
+    private address: string;
+    private trackerAddress: string
     private expressApp: express.Application;
 
-    constructor(port: number, trackerAddress: string) {
+    constructor(host: string, port: number, trackerHost: string, trackerPort: number) {
+        this.trackerAddress = `http://${trackerHost}:${trackerPort}`
+        this.host = host
         this.port = port;
-        this.trackerSocket = ioClient(trackerAddress);
-        this.chunks = new Map();
-        this.address = "localhost"; // Assuming the address is localhost
+        this.chunks = new Map(); 
+        this.address = `http://${this.host}:${this.port}`;
         console.log(`Worker started on port ${port}`);
-        this.route = `http://${this.address}:${this.port}`;
         this.expressApp = express();
 
         // Start the Express server for heartbeat
@@ -48,7 +46,7 @@ class Worker {
         this.setupEventListeners();
 
         this.setupHeartbeat();
-        fetch(`${TRACKER_URL}/worker`, {
+        fetch(`${this.trackerAddress}/worker`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -57,20 +55,14 @@ class Worker {
                 id: this.port,
                 address: this.address,
                 port: this.port,
-                route: this.route,
+                route: this.address,
             }),
         });
-
-
-
     }
-
-    
 
     private setupEventListeners() {
         this.server.on("connection", (socket) => {
             console.log(`New connection on port ${this.port}`);
-
             socket.on(
                 "store_chunk",
                 (
@@ -78,10 +70,6 @@ class Worker {
                     callback: (response: { success: boolean }) => void
                 ) => {
                     this.storeChunk(data.fileId, data.chunkId, data.chunk);
-                    this.trackerSocket.emit("store_chunk_info", {
-                        fileId: data.fileId,
-                        chunkId: data.chunkId,
-                    });
                     callback({ success: true });
                 }
             );
@@ -97,13 +85,6 @@ class Worker {
                 }
             );
         });
-
-        this.trackerSocket.on("connect", () => {
-            this.trackerSocket.emit("register_worker", {
-                address: this.address,
-                port: this.port,
-            });
-        });
     }
 
     private setupHeartbeat() {
@@ -117,12 +98,11 @@ class Worker {
             this.chunks.set(fileId, new Map());
         }
         this.chunks.get(fileId)!.set(chunkId, chunk);
-        console.log(
-            `Stored chunk ${chunkId} of file ${fileId} to node ${this.trackerSocket}:${this.port}`
-        );
     }
 
     private retrieveChunk(fileId: string, chunkId: number): Buffer | null {
+        console.log(this.chunks.has(fileId), this.chunks.get(fileId));
+        console.log(this.chunks.get(fileId)!.has(Number(chunkId)));
         if (
             this.chunks.has(fileId) &&
             this.chunks.get(fileId)!.has(Number(chunkId))
@@ -140,7 +120,7 @@ class Worker {
             .digest("hex");
         // Check if the file is already in the system
         try {
-            const response = await fetch(`${TRACKER_URL}/files/${fileId}`);
+            const response = await fetch(`${this.trackerAddress}/files/${fileId}`);
             console.log("response: ", response);
             if (response.ok) {
                 console.log(`File ${fileId} already exists in the system.`);
@@ -157,13 +137,13 @@ class Worker {
         const workerSockets: { [key: string]: ClientSocket } = {};
         console.log("active workers: ", activeWorkers);
         for (const worker of activeWorkers) {
-            if (worker.route !== this.route) {
+            if (worker.route !== this.address) {
                 const workerSocket = ioClient(`${worker.route}`);
                 workerSockets[`${worker.route}`] = workerSocket;
             }
         }
         const filteredWorkers = activeWorkers.filter(
-            (worker) => worker.route !== this.route
+            (worker) => worker.route !== this.address
         );
 
         const chunkDistribution: { [chunkId: number]: string[] } = {};
@@ -176,7 +156,7 @@ class Worker {
             chunkDistribution[i] = [];
 
             for (const worker of targetWorkers) {
-                chunkDistribution[i].push(...chunkDistribution[i], worker.route);
+                chunkDistribution[i].push(worker.route);
                 const workerKey = worker.route;
                 const workerSocket = workerSockets[workerKey];
                 await new Promise<void>((resolve) => {
@@ -198,7 +178,7 @@ class Worker {
         }
 
         // Send chunk distribution data to tracker
-        fetch(`${TRACKER_URL}/files/${fileId}/chunks`, {
+        fetch(`${this.trackerAddress}/files/${fileId}/chunks`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -217,14 +197,8 @@ class Worker {
             console.log(`Connection to worker ${workerKey} closed.`);
         }
 
-        this.trackerSocket.emit("store_file", {
-            fileId,
-            fileName: path.basename(filePath),
-            fileSize: fileContent.length,
-        });
-
         // Send file metadata to tracker
-        fetch(`${TRACKER_URL}/files`, {
+        fetch(`${this.trackerAddress}/files`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -246,7 +220,7 @@ class Worker {
 
     private async getActiveWorkers(): Promise<WorkerInfo[]> {
         return new Promise((resolve) => {
-            fetch(`${TRACKER_URL}/worker`)
+            fetch(`${this.trackerAddress}/worker`)
                 .then((response) => response.json())
                 .then((data) => resolve(data));
         });
@@ -317,24 +291,9 @@ class Worker {
     `);
     }
 
-    private getChunkLocations(
-        fileId: string,
-        chunkId: number
-    ): Promise<WorkerInfo[]> {
-        return new Promise((resolve) => {
-            this.trackerSocket.emit(
-                "get_chunk_locations",
-                { fileId, chunkId },
-                (locations: WorkerInfo[]) => {
-                    resolve(locations);
-                }
-            );
-        });
-    }
-
     private getFileChunks(fileId: string): Promise<{ string: string[] }> {
         return new Promise((resolve) => {
-            fetch(`${TRACKER_URL}/files/${fileId}/chunks`)
+            fetch(`${this.trackerAddress}/files/${fileId}/chunks`)
                 .then((response) => response.json())
                 .then((data) => resolve(data));
         });
@@ -352,7 +311,7 @@ class Worker {
 
     private listStoredFiles() {
         console.log("Fetching stored files from tracker...");
-        fetch(`${TRACKER_URL}/files`)
+        fetch(`${this.trackerAddress}/files`)
             .then((response) => response.json())
             .then((files) => {
                 console.log("Stored files:");
@@ -449,7 +408,10 @@ class Worker {
 }
 
 // Usage
-const port = Number(process.argv[2]);
-const trackerAddress = process.argv[3] || "http://localhost:3000";
-const worker = new Worker(port, trackerAddress);
+const TRACKER_HOST = process.env.TRACKER_HOST || "localhost"
+const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000
+const WORKER_HOST = process.env.WORKER_HOST || "localhost"
+const WORKER_PORT = Number(process.env.WORKER_PORT) || 3001
+const worker = new Worker(WORKER_HOST, WORKER_PORT, TRACKER_HOST, TRACKER_PORT);
 worker.cli();
+

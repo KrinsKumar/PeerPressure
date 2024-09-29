@@ -11,9 +11,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.7.7",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "redis": "^4.7.0",
     "socket.io": "^4.8.0"
-  }
+  },
+  "packageManager": "pnpm@9.1.2+sha1.907f57a52517de34399d66401bf220a549e47b57"
 }

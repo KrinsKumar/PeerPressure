@@ -2,3 +2,6 @@
 
 docker build . -t hack-the-hill-tracker
 
+pushd redis
+
+docker build . -t hack-the-hill-redis

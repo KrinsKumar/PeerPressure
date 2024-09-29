@@ -2,6 +2,9 @@
 
 export TRACKER_HOST=localhost
 export TRACKER_PORT=3000
+export REDIS_HOST=localhost
+export REDIS_PORT=9376
+export WORKER_HOST=localhost
 
 pushd tracker
 
