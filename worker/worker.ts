@@ -138,6 +138,17 @@ class Worker {
             .createHash("sha256")
             .update(fileContent)
             .digest("hex");
+        // Check if the file is already in the system
+        try {
+            const response = await fetch(`${TRACKER_URL}/files/${fileId}`);
+            console.log("response: ", response);
+            if (response.ok) {
+                console.log(`File ${fileId} already exists in the system.`);
+                return fileId;
+            }
+        } catch (error) {
+            console.error(`Error checking file existence: ${error}`);
+        }
         const chunks = this.splitIntoChunks(fileContent);
 
         const activeWorkers: WorkerInfo[] = await this.getActiveWorkers();
