@@ -183,7 +183,7 @@ export class FileManager extends Component {
                               )}
                               className="truncate cursor-pointer hover:bg-gray-100"
                             >
-                              {item.content}
+                              {item.content.length > 40 ? `${item.content.slice(0, 37)}...` : item.content}                            
                             </div>
                           )}
                         </Draggable>
