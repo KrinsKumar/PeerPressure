@@ -12,14 +12,15 @@ interface FileUploaderProps {
   handleDragLeave: React.DragEventHandler;
   handleDrop: React.DragEventHandler;
   handleFileInput: React.ChangeEventHandler;
+  isDisabled: boolean;
 }
 
-export const FileUploader = ({ isOpen, setIsOpen, isDragging, handleDragOver, handleDragLeave, handleDrop, handleFileInput }: FileUploaderProps) => {
+export const FileUploader = ({ isOpen, setIsOpen, isDragging, handleDragOver, handleDragLeave, handleDrop, handleFileInput, isDisabled }: FileUploaderProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button disabled={isDisabled}>
           <Upload className="mr-2 h-4 w-4" /> Upload File
         </Button>
       </DialogTrigger>

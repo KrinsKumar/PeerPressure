@@ -5,7 +5,7 @@ import Image from "next/image"
 
 import { FileUploader } from "@/components/ui/upload"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { NodeSelector } from "@/components/ui/node"
+import  NodeSelector  from "@/components/ui/node"
 import { FileManager } from "@/components/ui/file-manager"
 import shape1 from "@/images/shape-01.svg"
 import shape2 from "@/images/shape-02.svg"
@@ -71,7 +71,7 @@ export default function Home() {
           isOpen={isNodeSelectorOpen}
           setIsOpen={setIsNodeSelectorOpen}
           selected={address}
-          onSelect={(node) => setAddress(node.address)}
+          onSelect={(node) => setAddress(node)}
         />
       </div>
       <TabsContent value="upload">
@@ -85,6 +85,7 @@ export default function Home() {
             handleDragLeave={handleDragLeave}
             handleDrop={handleDrop}
             handleFileInput={handleFileInput}
+            isDisabled={address === ""}
           />
         </div>
         <Image src={shape1} alt="" className="fixed top-0 right-0 -z-10"/>
