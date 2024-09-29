@@ -29,7 +29,7 @@ setInterval(async () => {
     try {
       console.log(`Pinging worker ${worker.id} at ${worker.route}/heartbeat`);
 
-      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 });
+      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 }); // README: request timeout MUST be less than the interval
 
       if (response.status === 200) {
         worker.status = "active";  // Set status to active if the ping is successful
