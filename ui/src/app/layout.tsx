@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Peerful",
+  title: "PeerPressure",
   description: "Hack the Hill 2024",
 };
 

@@ -7,7 +7,6 @@ import { FileUploader } from "@/components/ui/upload"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { NodeSelector } from "@/components/ui/node"
 import { FileManager } from "@/components/ui/file-manager"
-import gridImage from "@/images/grid-3x3-gap.svg"
 import shape1 from "@/images/shape-01.svg"
 import shape2 from "@/images/shape-02.svg"
 
@@ -54,7 +53,7 @@ export default function Home() {
   return (
      <Tabs className="w-full container mx-auto px-10" defaultValue="upload">
       <div className="flex flex-row justify-between my-4">
-        <span className="grow basis-0">qtor</span>
+        <span className="grow basis-0">PeerPressure</span>
         <TabsList>
           <TabsTrigger value="upload" className="w-40">Upload</TabsTrigger>
           <TabsTrigger value="files" className="w-40">Files</TabsTrigger>
