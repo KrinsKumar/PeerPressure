@@ -2,7 +2,10 @@ import React, { Component } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { FileText } from "lucide-react"
+import { FileText, Ruler } from "lucide-react"
+
+
+const NEXT_PUBLIC_TRACKER_ADDRESS = process.env.NEXT_PUBLIC_TRACKER_ADDRESS
 
 // a little function to help us with reordering the result
 const reorder = (list, startIndex, endIndex) => {
@@ -52,58 +55,31 @@ const getListStyle = isDraggingOver => ({
     padding: grid,
 });
 
+const getAllFilesInSystem = () => {
+  return fetch(`${NEXT_PUBLIC_TRACKER_ADDRESS}/files`)
+    .then((response) => response.json())
+    .then((files) => {
+      return Object.entries(files).map(([fileId, fileInfo]) => ({
+        id: fileId,
+        content: fileInfo?.fileName,
+        size: fileInfo?.size
+      }))
+    })
+    .catch((error) => console.error(error))
+}
+
 export class FileManager extends Component {
     state = {
-        items: [
-          {
-            id: "1",
-            content: "finding nemo",
-          },
-          {
-            id: "2",
-            content: "dora",
-          },
-          {
-            id: "4",
-            content: "a",
-          },
-          {
-            id: "5",
-            content: "b",
-          },
-          {
-            id: "6",
-            content: "c",
-          },
-          {
-            id: "7",
-            content: "d",
-          },
-          {
-            id: "8",
-            content: "e",
-          },
-          {
-            id: "9",
-            content: "f"
-          },
-          {
-            id: "10",
-            content: "g",
-          },
-          {
-            id: "11",
-            content: "j",
-          }
-        ],
-        selected: [
-          {
-            id: "3",
-            content: "lion king",
-          }
-        ],
+        items: [],
+        selected: [],
         expanded: null,
     };
+
+    componentDidMount() {
+      getAllFilesInSystem().then((items) => {
+        this.setState({...this.state, items: items || []})
+      })
+    }
 
     /**
      * A semi-generic way to handle multiple lists. Matches
@@ -272,6 +248,11 @@ export class FileManager extends Component {
                           <FileText className="h-4 w-4" />
                           <span>{this.state.expanded.content}</span>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <Ruler className="h-4 w-4" />
+                          <span>{this.state.expanded.size} bytes</span>
+                        </div>
+
                         {this.state.expanded.downloadedAt && (
                           <div>
                             <span>Downloaded at:</span> {new Date(this.state.expanded.downloadedAt).toLocaleString()}
