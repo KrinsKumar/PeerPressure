@@ -338,7 +338,7 @@ class Worker {
                 if (chunkHashes[Number(chunkId)].includes(hash)) {
                     correct_chunk = chunk;
                     console.log(`Chunk ${chunkId} of file ${fileId} retrieved successfully`);
-                    break;
+                    continue;
                 }
                 console.log(`Chunk ${chunkId} of file ${fileId} failed integrity check`);
             }
