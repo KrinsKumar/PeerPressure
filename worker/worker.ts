@@ -121,6 +121,7 @@ class Worker {
 
     private async pullChunkFromActor(actorUrl: string, fileId: string, chunkId: number): Promise<Buffer | null> {
         return new Promise<Buffer | null>((resolve, reject) => {
+            console.log("Pulling chunk from actor: ", actorUrl);
             const socket = ioClient(actorUrl);
             
             socket.emit('retrieve_chunk', { fileId, chunkId }, (chunk: Buffer | null) => {
