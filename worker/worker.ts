@@ -104,8 +104,9 @@ class Worker {
   }
 
   private retrieveChunk(fileId: string, chunkId: number): Buffer | null {
-    console.log(this.chunks.has(fileId), this.chunks.get(fileId));
-    console.log(this.chunks.get(fileId)!.has(Number(chunkId)));
+    // Debug
+    // console.log(this.chunks.has(fileId), this.chunks.get(fileId));
+    // console.log(this.chunks.get(fileId)!.has(Number(chunkId)));
     if (
       this.chunks.has(fileId) &&
       this.chunks.get(fileId)!.has(Number(chunkId))
@@ -261,6 +262,10 @@ class Worker {
     let correct_chunk = null;
     let current_location = 0;
 
+    let FAIL_NOW = true;
+    let hash = "!!!!!!";
+
+
     console.log("retrieving file with ID: ", fileId);
     for (const chunkId of Object.keys(fileChunks)) {
       const locations = fileChunks[chunkId];
@@ -281,7 +286,12 @@ class Worker {
               }
           );
         });
-        const hash = crypto.createHash("sha256").update(chunk).digest("hex");
+        if (!FAIL_NOW) {
+          hash = crypto.createHash("sha256").update(chunk).digest("hex");
+        }
+        else {
+          FAIL_NOW = false;
+        }
         if (chunkHashes[Number(chunkId)].includes(hash)) {
           current_location = 0;
           correct_chunk = chunk;
