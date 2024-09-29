@@ -47,7 +47,15 @@ export default function Home() {
       name: file.name,
       size: file.size,
     }))
-    console.log(mapped)
+    if (mapped.length != 1) {
+      return;
+    }
+    const fd = new FormData()
+    fd.append('file', mapped[0])
+    fetch(`${address}/file`, {
+      method: "POST",
+      body: fd,
+    })
   }
 
   return (

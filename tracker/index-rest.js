@@ -5,9 +5,9 @@ import cors from "cors";
 import readline from "readline"; // CLI integration
 import axios from "axios";
 
-const REDIS_HOST = process.env.REDIS_HOST || "localhost"
-const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379
-const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000
+const REDIS_HOST = process.env.REDIS_HOST || "localhost";
+const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
+const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000;
 
 const app = express();
 app.use(cors());
@@ -19,6 +19,10 @@ client.on("error", (err) => console.error("Redis Client Error", err));
 
 let workers = [];
 let files = new Map();
+let fileHashToChunkHash = new Map();
+let nodeToChunkHash = new Map();
+let chunkHashToNode = new Map();
+let downloadedFiles = [];
 
 await client.connect();
 
@@ -29,19 +33,24 @@ setInterval(async () => {
     try {
       console.log(`Pinging worker ${worker.id} at ${worker.route}/heartbeat`);
 
-      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 });
+      const response = await axios.get(`${worker.route}/heartbeat`, {
+        timeout: 5000,
+      }); // README: request timeout MUST be less than the interval
 
       if (response.status === 200) {
-        worker.status = "active";  // Set status to active if the ping is successful
-        worker.lastSeen = new Date();  // Update the last seen timestamp
+        worker.status = "active"; // Set status to active if the ping is successful
+        worker.lastSeen = new Date(); // Update the last seen timestamp
         console.log(`Worker ${worker.id} is active.`);
       }
     } catch (error) {
-      worker.status = "inactive";  // Set status to inactive if the ping fails
-      console.error(`Worker ${worker.id} is not reachable. Error:`, error.message);
+      worker.status = "inactive"; // Set status to inactive if the ping fails
+      console.error(
+        `Worker ${worker.id} is not reachable. Error:`,
+        error.message
+      );
     }
   }
-}, 7000); 
+}, 15000);
 
 // get all workers
 app.get("/worker", async (req, res) => {
@@ -137,6 +146,73 @@ app.get("/files/:id/chunks", async (req, res) => {
   res.json(files);
 });
 
+// Store the chunk hashes
+app.post("/chunks/:id/hash", async (req, res) => {
+  const { chunkHashes } = req.body;
+  const fileHash = req.params.id;
+  try {
+    fileHashToChunkHash[fileHash] = chunkHashes;
+  } catch (e) {
+    res.status(400).send("Please provide all the fields");
+    return;
+  }
+  console.log("Adding a chunk hash", fileHash, chunkHashes);
+  res.json({ fileHash, chunkHashes });
+});
+
+// Get the chunk hashes
+app.get("/chunks/:id/hash", async (req, res) => {
+  return res.json(fileHashToChunkHash[req.params.id]);
+});
+
+// Store the node to chunk hashes
+app.post("/db/:id/chunks", async (req, res) => {
+  const { chunkHashes } = req.body;
+  const nodeId = req.params.id;
+  if (!nodeToChunkHash[nodeId]) {
+    nodeToChunkHash[nodeId] = [];
+  }
+  try {
+    nodeToChunkHash[nodeId].push(...chunkHashes);
+  } catch (e) {
+    res.status(400).send("Please provide all the fields");
+    return;
+  }
+});
+
+app.get("/db/:id/chunks", async (req, res) => {
+  return res.json(nodeToChunkHash[req.params.id]);
+});
+
+// Store the chunk to node hashes
+app.post("/db/:chunkId/nodes", async (req, res) => {
+  const { nodeId } = req.body;
+  const chunkId = req.params.chunkId;
+  if (!chunkHashToNode[chunkId]) {
+    chunkHashToNode[chunkId] = [];
+  }
+  try {
+    chunkHashToNode[chunkId].push(nodeId);
+  } catch (e) {
+    res.status(400).send("Please provide all the fields");
+    return;
+  }
+});
+
+app.get("/db/:chunkId/nodes", async (req, res) => {
+  return res.json(chunkHashToNode[req.params.chunkId]);
+});
+
+app.get("/downloaded", async (req, res) => {
+  res.json(downloadedFiles);
+});
+
+app.post("/downloaded", async (req, res) => {
+  const { fileId } = req.body;
+  downloadedFiles.push(fileId);
+  res.json({ fileId });
+});
+
 // make the final 404 route
 app.get("*", (req, res) => {
   res.send("404");
@@ -149,7 +225,7 @@ app.listen(TRACKER_PORT, () => {
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 console.log("Tracker CLI:");
@@ -158,7 +234,6 @@ console.log("- 1: Fetch all workers");
 console.log("- 2: Fetch all files");
 console.log("- 3: Fetch chunks for a file");
 console.log("- 4: Exit");
-
 
 rl.on("line", async (input) => {
   const [command] = input.trim().split(" ");
@@ -187,7 +262,9 @@ rl.on("line", async (input) => {
     case "3":
       rl.question("Enter the file ID to fetch chunks: ", async (fileId) => {
         try {
-          const { data } = await axios.get(`http://localhost:3000/files/${fileId}/chunks`);
+          const { data } = await axios.get(
+            `http://localhost:3000/files/${fileId}/chunks`
+          );
           console.log(`Chunks for file ${fileId}:`, data);
         } catch (error) {
           console.error("Error fetching file chunks:", error.message);
@@ -202,5 +279,10 @@ rl.on("line", async (input) => {
 
     default:
       console.log("Unknown command. Please enter a valid number.");
+      console.log("Possible commands:");
+      console.log("1: Fetch all workers");
+      console.log("2: Fetch all files");
+      console.log("3: Fetch chunks for a file");
+      console.log("4: Exit");
   }
 });
