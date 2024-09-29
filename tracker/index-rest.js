@@ -4,10 +4,14 @@ import { addFileChunks, findChunksForNodeAndRedistribute, getFileChunks } from "
 import cors from "cors";
 import readline from "readline"; // CLI integration
 import axios from "axios";
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import cliProgress from 'cli-progress';
+import Table from 'cli-table3';
 
-const REDIS_HOST = process.env.REDIS_HOST || "localhost"
-const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379
-const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000
+const REDIS_HOST = "localhost"
+const REDIS_PORT = 6379
+const TRACKER_PORT =  3000
 
 const app = express();
 app.use(cors());
@@ -26,18 +30,15 @@ let chunkHashToNode = new Map();
 await client.connect();
 
 setInterval(async () => {
-  console.log("Pinging all workers...");
 
   for (const worker of workers) {
     try {
-      console.log(`Pinging worker ${worker.id} at ${worker.route}/heartbeat`);
 
       const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 }); // README: request timeout MUST be less than the interval
 
       if (response.status === 200) {
         worker.status = "active";  // Set status to active if the ping is successful
         worker.lastSeen = new Date();  // Update the last seen timestamp
-        console.log(`Worker ${worker.id} is active.`);
       }
     } catch (error) {
       worker.status = "inactive";  // Set status to inactive if the ping fails
@@ -77,7 +78,6 @@ app.post("/worker", async (req, res) => {
 
   workers = workers.filter((worker) => worker.id !== id);
   workers.push({ id, route, status, lastSeen });
-  console.log("Adding a worker", id, route, status, lastSeen);
   res.send({ id, route, status, lastSeen });
 });
 
@@ -104,7 +104,6 @@ app.post("/files", async (req, res) => {
     res.status(400).send("Please provide a file id and hash");
     return;
   }
-  console.log("Adding a file", fileName, fileHash, size);
   files[fileHash] = { fileName, size };
   res.json("success");
 });
@@ -162,7 +161,7 @@ app.post("/chunks/:id/hash", async (req, res) => {
     res.status(400).send("Please provide all the fields");
     return;
   }
-  console.log("Adding a chunk hash", fileHash, chunkHashes);
+  // console.log("Adding a chunk hash", fileHash, chunkHashes);
   res.json({ fileHash, chunkHashes });
 });
 
@@ -214,70 +213,121 @@ app.get("*", (req, res) => {
   res.send("404");
 });
 
-// listen to the port
-app.listen(TRACKER_PORT, () => {
-  console.log(`Server is running on port ${TRACKER_PORT}`);
-});
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+// Function to display tables
+function displayTable(data, title) {
+  const table = new Table({
+    head: Object.keys(data[0]).map(key => chalk.cyan(key)),
+    colWidths: Object.keys(data[0]).map(() => 15),
+  });
 
-console.log("Tracker CLI:");
-console.log("Available commands:");
-console.log("- 1: Fetch all workers");
-console.log("- 2: Fetch all files");
-console.log("- 3: Fetch chunks for a file");
-console.log("- 4: Exit");
+  data.forEach(item => table.push(Object.values(item)));
 
+  console.log(chalk.yellow(`\n📋 ${title}:`));
+  console.log(table.toString());
+}
 
-rl.on("line", async (input) => {
-  const [command] = input.trim().split(" ");
+// Function to get statistics
+async function getStatistics() {
+  const workerCount = workers.length;
+  const activeWorkers = workers.filter(w => w.status === 'active').length;
+  const fileCount = Object.keys(files).length;
+  const totalChunks = Object.values(fileHashToChunkHash).reduce((acc, chunks) => acc + chunks.length, 0);
 
-  switch (command) {
-    case "1":
-      console.log("Fetching all workers...");
-      try {
-        const { data } = await axios.get("http://localhost:3000/worker");
-        console.log("Workers:", data);
-      } catch (error) {
-        console.error("Error fetching workers:", error.message);
+  return {
+    workerCount,
+    activeWorkers,
+    fileCount,
+    totalChunks,
+  };
+}
+
+// Redesigned CLI with enhanced interaction
+async function startCLI() {
+  console.clear();
+  console.log(chalk.green.bold(`🚀 Welcome to the Tracker CLI! 🚀`));
+  console.log(chalk.yellow('Let’s manage your workers and files with style!'));
+
+  while (true) {
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { name: `🏗️ Fetch all workers`, value: 'workers' },
+          { name: `📂 Fetch all files`, value: 'files' },
+          { name: `🧩 Fetch chunks for a file`, value: 'chunks' },
+          { name: `➗ View statistics`, value: 'stats' },
+          { name: `🚪 Exit`, value: 'exit' },
+        ],
+      },
+    ]);
+
+    if (action === 'exit') {
+      console.log(chalk.yellow('👋 Goodbye! See you next time.'));
+      process.exit(0);
+    }
+
+    const progressBar = new cliProgress.SingleBar({
+      format: `⏳ {bar} {percentage}% | {value}/{total} Chunks`,
+    }, cliProgress.Presets.shades_classic);
+
+    try {
+      switch (action) {
+        case 'workers':
+          progressBar.start(100, 0);
+          const { data: workers } = await axios.get("http://localhost:3000/worker");
+          progressBar.update(100);
+          progressBar.stop();
+          displayTable(workers, 'Workers');
+          break;
+
+        case 'files':
+          progressBar.start(100, 0);
+          const { data: files } = await axios.get("http://localhost:3000/files");
+          progressBar.update(100);
+          progressBar.stop();
+          displayTable(Object.entries(files).map(([hash, file]) => ({ hash, ...file })), 'Files');
+          break;
+
+        case 'chunks':
+          const { fileId } = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'fileId',
+              message: '🔍 Enter the file ID to fetch chunks:',
+            },
+          ]);
+          progressBar.start(100, 0);
+          const { data: chunks } = await axios.get(`http://localhost:3000/files/${fileId}/chunks`);
+          progressBar.update(100);
+          progressBar.stop();
+          displayTable(chunks.map((chunk, index) => ({ index, chunk })), `Chunks for file ${fileId}`);
+          break;
+
+        case 'stats':
+          progressBar.start(100, 0);
+          const stats = await getStatistics();
+          progressBar.update(100);
+          progressBar.stop();
+          console.log(chalk.yellow('\n📊 Tracker Statistics:'));
+          Object.entries(stats).forEach(([key, value]) => {
+            console.log(`${chalk.cyan(`${key}:`)} ${chalk.white(value)}`);
+          });
+          break;
       }
-      break;
+    } catch (error) {
+      progressBar.stop();
+      console.error(chalk.red(`❌ Error: ${error.message}`));
+    }
 
-    case "2":
-      console.log("Fetching all files...");
-      try {
-        const { data } = await axios.get("http://localhost:3000/files");
-        console.log("Files:", data);
-      } catch (error) {
-        console.error("Error fetching files:", error.message);
-      }
-      break;
-
-    case "3":
-      rl.question("Enter the file ID to fetch chunks: ", async (fileId) => {
-        try {
-          const { data } = await axios.get(`http://localhost:3000/files/${fileId}/chunks`);
-          console.log(`Chunks for file ${fileId}:`, data);
-        } catch (error) {
-          console.error("Error fetching file chunks:", error.message);
-        }
-      });
-      break;
-
-    case "4":
-      console.log("Exiting...");
-      rl.close();
-      break;
-
-    default:
-      console.log("Unknown command. Please enter a valid number.");
-      console.log("Possible commands:");
-      console.log("1: Fetch all workers");
-      console.log("2: Fetch all files");
-      console.log("3: Fetch chunks for a file");
-      console.log("4: Exit");
+    console.log('\n');
   }
+}
+
+// Start the CLI when the server is ready
+app.listen(TRACKER_PORT, () => {
+  console.log(chalk.green(`Server is running on port ${TRACKER_PORT}`));
+  startCLI();
 });
