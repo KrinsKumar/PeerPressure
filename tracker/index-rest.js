@@ -78,7 +78,6 @@ app.post("/worker", async (req, res) => {
 
   workers = workers.filter((worker) => worker.id !== id);
   workers.push({ id, route, status, lastSeen });
-  console.log("Adding a worker", id, route, status, lastSeen);
   res.send({ id, route, status, lastSeen });
 });
 
@@ -105,7 +104,6 @@ app.post("/files", async (req, res) => {
     res.status(400).send("Please provide a file id and hash");
     return;
   }
-  console.log("Adding a file", fileName, fileHash, size);
   files[fileHash] = { fileName, size };
   res.json("success");
 });
@@ -163,7 +161,7 @@ app.post("/chunks/:id/hash", async (req, res) => {
     res.status(400).send("Please provide all the fields");
     return;
   }
-  console.log("Adding a chunk hash", fileHash, chunkHashes);
+  // console.log("Adding a chunk hash", fileHash, chunkHashes);
   res.json({ fileHash, chunkHashes });
 });
 

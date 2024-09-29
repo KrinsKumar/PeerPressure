@@ -6,6 +6,7 @@ import * as readline from "readline";
 import * as path from "path";
 import express from "express";
 import { Request, Response } from "express";
+import chalk from "chalk";
 import * as zlib from "zlib";
 
 interface ChunkData {
@@ -169,9 +170,8 @@ class Worker {
     // Check if the file is already in the system
     try {
       const response = await fetch(`${this.trackerAddress}/files/${fileId}`);
-      console.log("response: ", response);
       if (response.ok) {
-        console.log(`File ${fileId} already exists in the system.`);
+        // console.log(`File ${fileId} already exists in the system.`);
         return fileId;
       }
     } catch (error) {
@@ -495,26 +495,25 @@ class Worker {
 
 
   cli() {
+    console.clear();
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
-    console.log(`Worker CLI (Port ${this.port}):`);
-    console.log("Available commands:");
-    console.log("1: upload <file_path> - Upload a file");
-    console.log("2: download <file_id> <output_path> - Download a file");
-    console.log("3: list_chunks - List all stored chunks");
-    console.log("4: list_files - List all stored files");
-    console.log("5: exit - Exit the worker");
-    console.log("6: upload_example_text - Upload example text file");
-    console.log("7: upload_example_pic - Upload example picture file");
-    console.log("8: upload_example_sound - Upload example sound file");
-    console.log("9: upload_example_bulk - Upload example bulk file");
+    console.log(chalk.bold.green(`🚀 Worker CLI (Port ${this.port}):`));
+    console.log(chalk.cyan('Available commands:'));
+    console.log(chalk.yellow('1: 📤 upload <file_path>') + ' - Upload a file');
+    console.log(chalk.yellow('2: 📥 download <file_id> <output_path>') + ' - Download a file');
+    console.log(chalk.yellow('3: 📋 list_chunks') + ' - List all stored chunks');
+    console.log(chalk.yellow('4: 📂 list_files') + ' - List all stored files');
+    console.log(chalk.yellow('5: 🚪 Exit') + ' - Exit the worker');
+    console.log(chalk.yellow('6: 📄 upload_example_text') + ' - Upload example text file');
+    console.log(chalk.yellow('7: 🖼️ upload_example_pic') + ' - Upload example picture file');
+    console.log(chalk.yellow('8: 🎵 upload_example_sound') + ' - Upload example sound file');
+    console.log(chalk.yellow('9: 📦 upload_example_bulk') + ' - Upload example bulk file');
 
     rl.on("line", async (input) => {
       const [command, ...args] = input.trim().split(" ");
-
-      // Map numbers to commands
       const commandMap = {
         "1": "upload",
         "2": "download",
@@ -526,25 +525,19 @@ class Worker {
         "8": "upload_example_sound",
         "9": "upload_example_bulk",
       } as { [key: string]: string };
-
-      // Check if the input is a number shortcut
       const actualCommand = commandMap[command] || command;
 
       switch (actualCommand) {
         case "upload":
           if (args.length !== 1) {
-            console.log("Usage: upload <file_path>");
+            console.log(chalk.red("Usage: upload <file_path>"));
             break;
           }
           await this.uploadFile(args[0]);
           break;
-        case "upload_example":
-          // Upload the specific example file
-          await this.uploadFile("./examples/example.txt");
-          break;
         case "download":
           if (args.length !== 2) {
-            console.log("Usage: download <file_id> <output_path>");
+            console.log(chalk.red("Usage: download <file_id> <output_path>"));
             break;
           }
           await this.downloadFile(args[0], args[1]);
@@ -564,26 +557,29 @@ class Worker {
         case "upload_example_sound":
           await this.uploadFile("./examples/sound.mp3");
           break;
+        case "upload_example_bulk":
+          await this.uploadFile("./examples/bulk.zip");
+          break;
         case "exit":
           rl.close();
           break;
         default:
-          console.log("Unknown command:", actualCommand);
-          // show possible commands
-          console.log("Possible commands:");
-          console.log("1: upload <file_path> - Upload a file");
-          console.log("2: download <file_id> <output_path> - Download a file");
-          console.log("3: list_chunks - List all stored chunks");
-          console.log("4: list_files - List all stored files");
-          console.log("5: exit - Exit the worker");
-          console.log("6: upload_example_text - Upload example text file");
-          console.log("7: upload_example_pic - Upload example picture file");
-          console.log("8: upload_example_sound - Upload example sound file");
+          console.log(chalk.red("Unknown command:"), actualCommand);
+          console.log(chalk.cyan("Possible commands:"));
+          console.log(chalk.yellow("1: upload <file_path>") + " - Upload a file");
+          console.log(chalk.yellow("2: download <file_id> <output_path>") + " - Download a file");
+          console.log(chalk.yellow("3: list_chunks") + " - List all stored chunks");
+          console.log(chalk.yellow("4: list_files") + " - List all stored files");
+          console.log(chalk.yellow("5: exit") + " - Exit the worker");
+          console.log(chalk.yellow("6: upload_example_text") + " - Upload example text file");
+          console.log(chalk.yellow("7: upload_example_pic") + " - Upload example picture file");
+          console.log(chalk.yellow("8: upload_example_sound") + " - Upload example sound file");
+          console.log(chalk.yellow("9: upload_example_bulk") + " - Upload example bulk file");
       }
     });
 
     rl.on("close", () => {
-      console.log("Exiting worker...");
+      console.log(chalk.green("👋 Exiting worker..."));
       process.exit(0);
     });
   }

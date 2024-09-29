@@ -3,7 +3,7 @@ import axios from "axios";
 
 // add file chunks for the database
 export async function addFileChunks(client, fileHash, chunkIds) {
-  console.log("Adding file chunks to redis", fileHash, chunkIds);
+  // console.log("Adding file chunks to redis", fileHash, chunkIds);
   client.set(fileHash, JSON.stringify(chunkIds));
   return true;
 }
