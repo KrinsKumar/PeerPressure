@@ -105,11 +105,14 @@ class Worker {
 
   private setupUiSubmission() {
     this.expressApp.post("/file", (req: Request, res: Response) => {
+      // console.log("req: ", req);
+      // console.log("file: ", req.files);
+      console.log("file: ", (req.files?.file as any)?.data);
       const file: any = req.files?.file;
       if (file === undefined || Array.isArray(file)) {
         return;
       }
-      const fileId = crypto.createHash("sha256").update(Buffer.from(file)).digest("hex");
+      const fileId = crypto.createHash("sha256").update(Buffer.from(file.data)).digest("hex");
       this.uploadFile(fileId, file);
     });
 
@@ -143,19 +146,20 @@ class Worker {
     let fileContent;
     if (file) {
       // convert file into buffer
-      fileContent = Buffer.from(file);
-      fileContent = file;
+      fileContent = Buffer.from(file.data);
+      // fileContent = file;
     } else {
       if (!fs.existsSync(filePath)) {
         console.log(`File not found: ${filePath}`);
         return "";
       }
       fileContent = zlib.deflateSync(fs.readFileSync(filePath));
+      console.log("file: ", fileContent);
     }
     // const fileContent =fs.readFileSync(filePath);
     const fileId = crypto
       .createHash("sha256")
-      .update(fileContent)
+      .update(fileContent as Buffer)
       .digest("hex");
     // Check if the file is already in the system
     try {
