@@ -101,8 +101,9 @@ class Worker {
     }
 
     private retrieveChunk(fileId: string, chunkId: number): Buffer | null {
-        console.log(this.chunks.has(fileId), this.chunks.get(fileId));
-        console.log(this.chunks.get(fileId)!.has(Number(chunkId)));
+        // Debug
+        // console.log(this.chunks.has(fileId), this.chunks.get(fileId));
+        // console.log(this.chunks.get(fileId)!.has(Number(chunkId)));
         if (
             this.chunks.has(fileId) &&
             this.chunks.get(fileId)!.has(Number(chunkId))
@@ -150,6 +151,7 @@ class Worker {
             (worker) => worker.route !== this.address
         );
 
+        let chunkHashes: string[] = [];
         const chunkDistribution: { [chunkId: number]: string[] } = {};
 
         for (let i = 0; i < chunks.length; i++) {
@@ -157,6 +159,10 @@ class Worker {
                 filteredWorkers,
                 replicationFactor
             );
+            chunkHashes = [
+                ...chunkHashes,
+                crypto.createHash("sha256").update(chunks[i]).digest("hex"),
+            ];
             chunkDistribution[i] = [];
 
             for (const worker of targetWorkers) {
@@ -194,6 +200,21 @@ class Worker {
             .then((response) => response.json())
             .catch((error) =>
                 console.error("Error sending chunk distribution to tracker:", error)
+            );
+
+        console.log("Chunk hashes:", chunkHashes);
+        fetch(`${this.trackerAddress}/chunks/${fileId}/hash`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                chunkHashes,
+            }),
+        })
+            .then((response) => response.json())
+            .catch((error) =>
+                console.error("Error sending chunk hash to tracker:", error)
             );
 
         for (const workerKey in workerSockets) {
@@ -241,28 +262,48 @@ class Worker {
     async downloadFile(fileId: string, outputPath: string) {
         const chunks: (Buffer | null)[] = [];
         const fileChunks: any = await this.getFileChunks(fileId);
+        const chunkHashes = await this.getChunkHashes(fileId);
+
+        let FAIL_NOW = true;
+        let hash = "!!!!!!";
 
         console.log("retrieving file with ID: ", fileId);
 
         for (const chunkId of Object.keys(fileChunks)) {
             const locations = fileChunks[chunkId];
+            let correct_chunk = null;
+
+            for (const location of locations) {
+                // console.log(location);
+                const chunk = await new Promise<Buffer>((resolve) => {
+                    const nodeSocket = ioClient(`${locations[0]}`);
+                    nodeSocket.emit(
+                        "retrieve_chunk",
+                        { fileId, chunkId },
+                        (chunk: Buffer) => {
+                            resolve(chunk);
+                        }
+                    );
+                });
+                if (!FAIL_NOW) {
+                    hash = crypto.createHash("sha256").update(chunk).digest("hex");
+                }
+                else {
+                    FAIL_NOW = false;
+                }
+                if (chunkHashes[Number(chunkId)].includes(hash)) {
+                    correct_chunk = chunk;
+                    console.log(`Chunk ${chunkId} of file ${fileId} retrieved successfully`);
+                    break;
+                }
+                console.log(`Chunk ${chunkId} of file ${fileId} failed integrity check`);
+            }
+
             if (locations.length === 0) {
                 console.error(`Chunk ${chunkId} of file ${fileId} not found`);
                 return;
             }
-            console.log("trying to retrieve chunk from: ");
-            const chunk = await new Promise<Buffer>((resolve) => {
-                const nodeSocket = ioClient(`${locations[0]}`);
-                nodeSocket.emit(
-                    "retrieve_chunk",
-                    { fileId, chunkId },
-                    (chunk: Buffer) => {
-                        resolve(chunk);
-                    }
-                );
-            });
-            console.log("chunk retrieved: ", chunk);
-            chunks[Number(chunkId)] = chunk;
+            chunks[Number(chunkId)] = correct_chunk;
         }
 
         const validChunks = chunks.filter(Boolean) as Buffer[];
@@ -300,6 +341,15 @@ class Worker {
             fetch(`${this.trackerAddress}/files/${fileId}/chunks`)
                 .then((response) => response.json())
                 .then((data) => resolve(data));
+        });
+    }
+
+    private getChunkHashes(fileId: string): Promise<string[]> {
+        return new Promise((resolve) => {
+            fetch(`${this.trackerAddress}/chunks/${fileId}/hash`)
+                .then((response) => response.json())
+                .then((data) => resolve(data))
+                .catch((error) => console.error("Error fetching chunk hashes:", error));
         });
     }
 
@@ -415,7 +465,7 @@ class Worker {
 const TRACKER_HOST = process.env.TRACKER_HOST || "localhost"
 const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000
 const WORKER_HOST = process.env.WORKER_HOST || "localhost"
-const WORKER_PORT = Number(process.env.WORKER_PORT) || 3001
+const WORKER_PORT = Number(process.env.WORKER_PORT) || 3004
 const worker = new Worker(WORKER_HOST, WORKER_PORT, TRACKER_HOST, TRACKER_PORT);
 worker.cli();
 
