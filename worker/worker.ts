@@ -258,7 +258,6 @@ class Worker {
     const chunks: (Buffer | null)[] = [];
     const fileChunks: any = await this.getFileChunks(fileId);
     const chunkHashes = await this.getChunkHashes(fileId);
-    let hash_flag = true;
     let correct_chunk = null;
     let current_location = 0;
 
@@ -270,37 +269,33 @@ class Worker {
         return;
       }
       console.log("trying to retrieve chunk from: ");
-      do {
+      for (const location of locations) {
+        // console.log(location);
         const chunk = await new Promise<Buffer>((resolve) => {
           const nodeSocket = ioClient(`${locations[current_location]}`);
           nodeSocket.emit(
-            "retrieve_chunk",
-            { fileId, chunkId },
-            (chunk: Buffer) => {
-              resolve(chunk);
-            }
+              "retrieve_chunk",
+              { fileId, chunkId },
+              (chunk: Buffer) => {
+                resolve(chunk);
+              }
           );
         });
         const hash = crypto.createHash("sha256").update(chunk).digest("hex");
-        if (hash !== chunkHashes[Number(chunkId)]) {
-          console.error(
-            `Chunk ${chunkId} of file ${fileId} failed integrity check`
-          );
-          current_location++;
-        } else {
-          hash_flag = false;
+        if (chunkHashes[Number(chunkId)].includes(hash)) {
           current_location = 0;
+          correct_chunk = chunk;
+          console.log(`Chunk ${chunkId} of file ${fileId} retrieved successfully`);
+          break;
         }
-        correct_chunk = chunk;
-      } while (hash_flag && current_location < locations.length);
-
+        console.log(`Chunk ${chunkId} of file ${fileId} failed integrity check`);
+      }
       if (locations.length === current_location) {
         console.error(
           `Chunk ${chunkId} of file ${fileId} was not found in any of the locations`
         );
         return;
       }
-
       chunks[Number(chunkId)] = correct_chunk;
     }
 
