@@ -15,6 +15,8 @@ client.on("error", (err) => console.error("Redis Client Error", err));
 let workers = [];
 let files = new Map();
 let fileHashToChunkHash = new Map();
+let nodeToChunkHash = new Map();
+let chunkHashToNode = new Map();
 
 await client.connect();
 
@@ -137,6 +139,44 @@ app.post("/chunks/:id/hash", async (req, res) => {
 // Get the chunk hashes
 app.get("/chunks/:id/hash", async (req, res) => {
   return res.json(fileHashToChunkHash[req.params.id]);
+});
+
+// Store the node to chunk hashes
+app.post("/db/:id/chunks", async (req, res) => {
+  const { chunkHashes } = req.body;
+  const nodeId = req.params.id;
+  if (!nodeToChunkHash[nodeId]) {
+    nodeToChunkHash[nodeId] = [];
+  }
+  try {
+    nodeToChunkHash[nodeId].push(...chunkHashes);
+    } catch (e) {
+        res.status(400).send("Please provide all the fields");
+        return;
+    }
+});
+
+app.get("/db/:id/chunks", async (req, res) => {
+    return res.json(nodeToChunkHash[req.params.id]);
+});
+
+// Store the chunk to node hashes
+app.post("/db/:chunkId/nodes", async (req, res) => {
+    const { nodeId } = req.body;
+    const chunkId = req.params.chunkId;
+    if (!chunkHashToNode[chunkId]) {
+        chunkHashToNode[chunkId] = [];
+    }
+    try {
+        chunkHashToNode[chunkId].push(nodeId);
+    } catch (e) {
+        res.status(400).send("Please provide all the fields");
+        return;
+    }
+});
+
+app.get("/db/:chunkId/nodes", async (req, res) => {
+    return res.json(chunkHashToNode[req.params.chunkId]);
 });
 
 // // add all the chunks that a file has
