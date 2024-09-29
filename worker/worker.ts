@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as crypto from "crypto";
 import * as readline from "readline";
 import * as path from "path";
+import { get } from "http";
 
 const TRACKER_URL = process.env.TRACKER_IP || "http://localhost:3000";
 
@@ -138,7 +139,7 @@ class Worker {
       (worker) => worker.route !== this.route
     );
 
-    let chunkHashes = [];
+    let chunkHashes: string[] = [];
     const chunkDistribution: { [chunkId: number]: string[] } = {};
 
     for (let i = 0; i < chunks.length; i++) {
@@ -188,6 +189,21 @@ class Worker {
       .then((response) => response.json())
       .catch((error) =>
         console.error("Error sending chunk distribution to tracker:", error)
+      );
+
+    console.log("Chunk hashes:", chunkHashes);
+    fetch(`${TRACKER_URL}/chunks/${fileId}/hash`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        chunkHashes,
+      }),
+    })
+      .then((response) => response.json())
+      .catch((error) =>
+        console.error("Error sending chunk hash to tracker:", error)
       );
 
     for (const workerKey in workerSockets) {
@@ -241,6 +257,7 @@ class Worker {
   async downloadFile(fileId: string, outputPath: string) {
     const chunks: (Buffer | null)[] = [];
     const fileChunks: any = await this.getFileChunks(fileId);
+    const chunkHashes = await this.getChunkHashes(fileId);
 
     console.log("retrieving file with ID: ", fileId);
 
@@ -315,6 +332,15 @@ class Worker {
       fetch(`${TRACKER_URL}/files/${fileId}/chunks`)
         .then((response) => response.json())
         .then((data) => resolve(data));
+    });
+  }
+
+  private getChunkHashes(fileId: string): Promise<string[]> {
+    return new Promise((resolve) => {
+      fetch(`${TRACKER_URL}/chunks/${fileId}/hash`)
+        .then((response) => response.json())
+        .then((data) => resolve(data))
+        .catch((error) => console.error("Error fetching chunk hashes:", error));
     });
   }
 
