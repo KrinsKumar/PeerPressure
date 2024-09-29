@@ -277,7 +277,7 @@ class Worker {
     const fileChunks: any = await this.getFileChunks(fileId);
     const chunkHashes = await this.getChunkHashes(fileId);
 
-    let FAIL_NOW = true;
+    let FAIL_NOW = false;
     let hash = "!!!!!!";
 
     console.log("retrieving file with ID: ", fileId);
@@ -289,7 +289,7 @@ class Worker {
       for (const location of locations) {
         // console.log(location);
         const chunk = await new Promise<Buffer>((resolve) => {
-          const nodeSocket = ioClient(`${locations[0]}`);
+          const nodeSocket = ioClient(`${location}`);
           nodeSocket.emit(
             "retrieve_chunk",
             { fileId, chunkId },
@@ -298,6 +298,10 @@ class Worker {
             }
           );
         });
+        if (!chunk) {
+          console.error(`Chunk ${chunkId} of file ${fileId} not found`);
+          continue;
+        }
         if (!FAIL_NOW) {
           hash = crypto.createHash("sha256").update(chunk).digest("hex");
         } else {
