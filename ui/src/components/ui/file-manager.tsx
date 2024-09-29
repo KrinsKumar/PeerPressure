@@ -1,175 +1,258 @@
-"use client"
-
-import { useState, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-import { Trash2, FileText, X } from 'lucide-react'
-import { Button } from "@/components/ui/button"
+import React, { Component } from 'react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-// Mock data for available files
-const availableFiles = [
-  { id: '1', name: 'document1.pdf' },
-  { id: '2', name: 'image1.jpg' },
-  { id: '3', name: 'spreadsheet1.xlsx' },
-  { id: '4', name: 'presentation1.pptx' },
-  { id: '5', name: 'document2.pdf' },
-]
+// a little function to help us with reordering the result
+const reorder = (list, startIndex, endIndex) => {
+    const result = Array.from(list);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
 
-// Mock function to simulate file download
-const downloadFile = (file: { id: string, name: string }) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ ...file, downloadedAt: new Date().toISOString() })
-    }, 1000)
-  })
-}
+    return result;
+};
 
-export function FileManager() {
-  const [downloadedFiles, setDownloadedFiles] = useState([])
-  const [selectedFile, setSelectedFile] = useState(null)
+/**
+ * Moves an item from one list to another list.
+ */
+const move = (source, destination, droppableSource, droppableDestination) => {
+    const sourceClone = Array.from(source);
+    const destClone = Array.from(destination);
+    const [removed] = sourceClone.splice(droppableSource.index, 1);
 
-  const onDragEnd = async (result) => {
-    if (!result.destination) return
+    destClone.splice(droppableDestination.index, 0, removed);
 
-    const sourceIndex = result.source.index
-    const sourceDroppableId = result.source.droppableId
+    const result = {};
+    result[droppableSource.droppableId] = sourceClone;
+    result[droppableDestination.droppableId] = destClone;
 
-    if (sourceDroppableId === 'availableFiles' && result.destination.droppableId === 'downloadedFiles') {
-      const fileToDownload = availableFiles[sourceIndex]
-      const downloadedFile = fileToDownload;
-      setDownloadedFiles(downloadedFiles.splice(result.destination.index, 0, downloadedFile))
-    }
-  }
+    console.log(`moved: ${removed}`)
+    return result;
+};
 
-  const deleteFile = (id) => {
-    setDownloadedFiles(downloadedFiles.filter(file => file.id !== id))
-    if (selectedFile && selectedFile.id === id) {
-      setSelectedFile(null)
-    }
-  }
+const grid = 8;
 
-  return (
-    <div className="flex">
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex-1 p-4">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>File Manager</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 h-full">
-                <Droppable droppableId="availableFiles">
-                  {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef}>
-                      <Card className="h-full">
-                        <CardHeader>
-                          <CardTitle>Available Files</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <ScrollArea className="h-[500px]">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Filename</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {availableFiles.map((file, index) => (
-                                  <Draggable key={file.id} draggableId={file.id} index={index}>
-                                    {(provided) => (
-                                      <TableRow
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        onClick={() => setSelectedFile(file)}
-                                      >
-                                        <TableCell>{file.name}</TableCell>
-                                      </TableRow>
-                                    )}
-                                  </Draggable>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </ScrollArea>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-                </Droppable>
-                <Droppable droppableId="downloadedFiles">
-                  {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef}>
-                      <Card className="h-full">
-                        <CardHeader>
-                          <CardTitle>Downloaded Files</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <ScrollArea className="h-[500px]">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Filename</TableHead>
-                                  <TableHead>Actions</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {downloadedFiles.map((file, index) => (
-                                  <TableRow key={file.id} onClick={() => setSelectedFile(file)}>
-                                    <TableCell>{file.name}</TableCell>
-                                    <TableCell>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          deleteFile(file.id)
-                                        }}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </ScrollArea>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-                </Droppable>
+const getItemStyle = (isDragging, draggableStyle) => ({
+    // some basic styles to make the items look a bit nicer
+    userSelect: 'none',
+    padding: grid * 2,
+    margin: `0 0 ${grid}px 0`,
+
+    // change background colour if dragging
+    background: 'white',
+    borderWidth: 1,
+    borderRadius: '5px',
+
+    // styles we need to apply on draggables
+    ...draggableStyle
+});
+
+const getListStyle = isDraggingOver => ({
+    padding: grid,
+});
+
+export class FileManager extends Component {
+    state = {
+        items: [
+          {
+            id: "1",
+            content: "finding nemo",
+          },
+          {
+            id: "2",
+            content: "dora",
+          },
+          {
+            id: "4",
+            content: "a",
+          },
+          {
+            id: "5",
+            content: "b",
+          },
+          {
+            id: "6",
+            content: "c",
+          },
+          {
+            id: "7",
+            content: "d",
+          },
+          {
+            id: "8",
+            content: "e",
+          },
+          {
+            id: "9",
+            content: "f"
+          },
+          {
+            id: "10",
+            content: "g",
+          },
+          {
+            id: "11",
+            content: "j",
+          }
+        ],
+        selected: [
+          {
+            id: "3",
+            content: "lion king",
+          }
+        ]
+    };
+
+    /**
+     * A semi-generic way to handle multiple lists. Matches
+     * the IDs of the droppable container to the names of the
+     * source arrays stored in the state.
+     */
+    id2List = {
+        droppable: 'items',
+        droppable2: 'selected'
+    };
+
+    getList = id => this.state[this.id2List[id]];
+
+    onDragEnd = result => {
+        const { source, destination } = result;
+
+        // dropped outside the list
+        if (!destination) {
+            return;
+        }
+
+        if (source.droppableId === destination.droppableId) {
+            const items = reorder(
+                this.getList(source.droppableId),
+                source.index,
+                destination.index
+            );
+
+            let state = { items };
+
+            if (source.droppableId === 'droppable2') {
+                state = { selected: items };
+            }
+
+            this.setState(state);
+        } else {
+            const result = move(
+                this.getList(source.droppableId),
+                this.getList(destination.droppableId),
+                source,
+                destination
+            );
+
+            this.setState({
+                items: result.droppable,
+                selected: result.droppable2
+            });
+        }
+    };
+
+    // Normally you would want to split things out into separate components.
+    // But in this example everything is just done in one place for simplicity
+    render() {
+        return (
+            <DragDropContext onDragEnd={this.onDragEnd}>
+              <div className="flex flex-row gap-4 h-fit">
+                <Card className="h-full w-full">
+                  <CardHeader>
+                    <CardTitle>Available Files</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[600px] p-4">
+                      <Droppable
+                        droppableId="droppable"
+                        renderClone={(provided, snapshot, rubric) => (
+                          <div
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            ref={provided.innerRef}
+                            style={
+                              getItemStyle(
+                                snapshot.isDragging,
+                                provided.draggableProps.style,
+                              )
+                            }
+                          >
+                            {this.state.items[rubric.source.index].content}
+                          </div>
+                        )}
+                      >
+                          {(provided, snapshot) => (
+                              <div
+                                  ref={provided.innerRef}
+                                  className="flex flex-col w-full"
+                                  style={getListStyle(snapshot.isDraggingOver)}>
+                                  {this.state.items.map((item, index) => (
+                                      <Draggable
+                                          key={item.id}
+                                          draggableId={item.id}
+                                          index={index}>
+                                          {(provided, snapshot) => (
+                                              <div
+                                                  ref={provided.innerRef}
+                                                  {...provided.draggableProps}
+                                                  {...provided.dragHandleProps}
+                                                  style={getItemStyle(
+                                                      snapshot.isDragging,
+                                                      provided.draggableProps.style
+                                                  )}>
+                                                  {item.content}
+                                              </div>
+                                          )}
+                                      </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                              </div>
+                          )}
+                      </Droppable>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+                <Card className="w-full h-full">
+                  <CardHeader>
+                    <CardTitle>Downloaded Files</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[600px] p-4">
+                      <Droppable droppableId="droppable2">
+                          {(provided, snapshot) => (
+                              <div
+                                  ref={provided.innerRef}
+                                  className="flex flex-col"
+                                  style={getListStyle(snapshot.isDraggingOver)}>
+                                  {this.state.selected.map((item, index) => (
+                                      <Draggable
+                                          key={item.id}
+                                          draggableId={item.id}
+                                          index={index}>
+                                          {(provided, snapshot) => (
+                                              <div
+                                                  ref={provided.innerRef}
+                                                  {...provided.draggableProps}
+                                                  {...provided.dragHandleProps}
+                                                  style={getItemStyle(
+                                                      snapshot.isDragging,
+                                                      provided.draggableProps.style
+                                                  )}>
+                                                  {item.content}
+                                              </div>
+                                          )}
+                                      </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                              </div>
+                          )}
+                      </Droppable>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </DragDropContext>
-      {selectedFile && (
-        <Card className="w-1/4 p-4">
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              File Information
-              <Button variant="ghost" size="icon" onClick={() => setSelectedFile(null)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span className="font-semibold">{selectedFile.name}</span>
-              </div>
-              {selectedFile.downloadedAt && (
-                <div>
-                  <span className="font-semibold">Downloaded at:</span> {new Date(selectedFile.downloadedAt).toLocaleString()}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
+            </DragDropContext>
+        );
+    }
 }

@@ -77,7 +77,9 @@ export default function Home() {
         </div>
       </TabsContent>
       <TabsContent value="files">
-        <FileManager/>
+        <div className="mt-12">
+          <FileManager/>
+        </div>
       </TabsContent>
      </Tabs>
   );
