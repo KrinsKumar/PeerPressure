@@ -16,14 +16,10 @@ export async function getFileChunks(client, fileHash) {
 
 // README: THE LEAST EFFICIENT PIECE OF CODE YOU WILL EVER SEE
 export async function findChunksForNodeAndRedistribute(client, targetOldNodeRoute, availableNodes) {
-  console.log("Finding chunks that were in node", targetOldNodeRoute);
   // Get all file keys
   const fileKeys = await client.keys("*");
 
-  console.log("All file keys", fileKeys);
 
-  // Map to store matches: fileId -> [chunkIds]
-  const matches = new Map();
 
   // Iterate through each file key
   for (const fileId of fileKeys) {
@@ -36,9 +32,16 @@ export async function findChunksForNodeAndRedistribute(client, targetOldNodeRout
 
       // Check if the targetNodeId is in the current chunk
       if (nodeIds.includes(targetOldNodeRoute)) {
-        // Mutation in place, we replace the targetOldNode with a new node
-        const newNode = availableNodes[Math.floor(Math.random() * availableNodes.length)];
-    
+        // Must grab a random active node that is not in nodeIds
+        const filteredNodes = availableNodes.filter((node) => !nodeIds.includes(node.route));
+
+        if (filteredNodes.length === 0) {
+          console.error("No available nodes to pull from, the file will be corrupted");
+          continue;
+        } 
+          const newNode = filteredNodes[Math.floor(Math.random() * filteredNodes.length)];
+        
+
         const newNodeIndex = nodeIds.indexOf(targetOldNodeRoute);
 
         const adjacentNodeToPullFrom = nodeIds[newNodeIndex + 1] || nodeIds[newNodeIndex - 1];
@@ -69,7 +72,7 @@ export async function findChunksForNodeAndRedistribute(client, targetOldNodeRout
   }
 
   // Convert Map to a plain object for easier use
-  return Object.fromEntries(matches);
+  // return Object.fromEntries(matches);
 }
 
 

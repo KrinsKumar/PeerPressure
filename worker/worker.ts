@@ -97,7 +97,7 @@ class Worker {
 
         this.expressApp.post('/pull_chunk', async (req: Request, res: Response) => {
             const { actorUrl, fileId, chunkId } = req.body;
-
+            console.log(`Pulling chunk ${chunkId} from file ${fileId} from actor: ${actorUrl}`);
             try {
                 // Fetch the chunk from the other actor
                 const chunk = await this.pullChunkFromActor(actorUrl, fileId, chunkId);
@@ -171,7 +171,6 @@ class Worker {
         // Check if the file is already in the system
         try {
             const response = await fetch(`${this.trackerAddress}/files/${fileId}`);
-            console.log("response: ", response);
             if (response.ok) {
                 console.log(`File ${fileId} already exists in the system.`);
                 return fileId;
@@ -185,7 +184,6 @@ class Worker {
         const replicationFactor = Math.ceil(activeWorkers.length / 2);
 
         const workerSockets: { [key: string]: ClientSocket } = {};
-        console.log("active workers: ", activeWorkers);
         for (const worker of activeWorkers) {
             if (worker.route !== this.address) {
                 const workerSocket = ioClient(`${worker.route}`);
@@ -309,7 +307,7 @@ class Worker {
         const fileChunks: any = await this.getFileChunks(fileId);
         const chunkHashes = await this.getChunkHashes(fileId);
 
-        let FAIL_NOW = true;
+        let FAIL_NOW = false;
         let hash = "!!!!!!";
 
         console.log("retrieving file with ID: ", fileId);
@@ -331,6 +329,7 @@ class Worker {
                     );
                 });
                 if (!FAIL_NOW) {
+                    console.log(JSON.stringify(chunk));
                     hash = crypto.createHash("sha256").update(chunk).digest("hex");
                 }
                 else {
@@ -357,7 +356,7 @@ class Worker {
             console.error("No valid chunks retrieved for the file.");
             return;
         }
-
+        console.log("🚀🚀", validChunks);
         const fileContent = Buffer.concat(validChunks);
         this.verifyFileIntegrity(fileContent, fileId);
         const decompressedContent = zlib.inflateSync(fileContent);
