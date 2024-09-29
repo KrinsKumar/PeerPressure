@@ -1,11 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 
 import { FileUploader } from "@/components/ui/upload"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { NodeSelector } from "@/components/ui/node"
 import { FileManager } from "@/components/ui/file-manager"
+import gridImage from "@/images/grid-3x3-gap.svg"
+import shape1 from "@/images/shape-01.svg"
+import shape2 from "@/images/shape-02.svg"
 
 export default function Home() {
   const [isFileUploaderOpen, setIsFileUploaderOpen] = useState(false);
@@ -63,8 +67,8 @@ export default function Home() {
         />
       </div>
       <TabsContent value="upload">
-        <h1 className="w-fit mx-auto mt-40 text-5xl">Files for users, by users</h1>
-        <div className="w-fit mx-auto my-32">
+        <h1 className="w-fit mx-auto mt-32 text-6xl font-semibold max-w-[60rem] text-center">The best way to share and consume data</h1>
+        <div className="w-fit mx-auto mt-40">
           <FileUploader
             isOpen={isFileUploaderOpen}
             setIsOpen={setIsFileUploaderOpen}
@@ -75,6 +79,8 @@ export default function Home() {
             handleFileInput={handleFileInput}
           />
         </div>
+        <Image src={shape1} alt="" className="fixed top-0 right-0 -z-10"/>
+        <Image src={shape2} alt="" className="fixed bottom-0 left-[9rem] -z-10 w-[70rem]"/>
       </TabsContent>
       <TabsContent value="files">
         <div className="mt-12">
