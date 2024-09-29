@@ -5,9 +5,9 @@ import cors from "cors";
 import readline from "readline"; // CLI integration
 import axios from "axios";
 
-const REDIS_HOST = process.env.REDIS_HOST || "localhost"
-const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379
-const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000
+const REDIS_HOST = process.env.REDIS_HOST || "localhost";
+const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
+const TRACKER_PORT = Number(process.env.TRACKER_PORT) || 3000;
 
 const app = express();
 app.use(cors());
@@ -22,6 +22,7 @@ let files = new Map();
 let fileHashToChunkHash = new Map();
 let nodeToChunkHash = new Map();
 let chunkHashToNode = new Map();
+let downloadedFiles = [];
 
 await client.connect();
 
@@ -32,19 +33,24 @@ setInterval(async () => {
     try {
       console.log(`Pinging worker ${worker.id} at ${worker.route}/heartbeat`);
 
-      const response = await axios.get(`${worker.route}/heartbeat`, { timeout: 5000 }); // README: request timeout MUST be less than the interval
+      const response = await axios.get(`${worker.route}/heartbeat`, {
+        timeout: 5000,
+      }); // README: request timeout MUST be less than the interval
 
       if (response.status === 200) {
-        worker.status = "active";  // Set status to active if the ping is successful
-        worker.lastSeen = new Date();  // Update the last seen timestamp
+        worker.status = "active"; // Set status to active if the ping is successful
+        worker.lastSeen = new Date(); // Update the last seen timestamp
         console.log(`Worker ${worker.id} is active.`);
       }
     } catch (error) {
-      worker.status = "inactive";  // Set status to inactive if the ping fails
-      console.error(`Worker ${worker.id} is not reachable. Error:`, error.message);
+      worker.status = "inactive"; // Set status to inactive if the ping fails
+      console.error(
+        `Worker ${worker.id} is not reachable. Error:`,
+        error.message
+      );
     }
   }
-}, 15000); 
+}, 15000);
 
 // get all workers
 app.get("/worker", async (req, res) => {
@@ -197,6 +203,16 @@ app.get("/db/:chunkId/nodes", async (req, res) => {
   return res.json(chunkHashToNode[req.params.chunkId]);
 });
 
+app.get("/downloaded", async (req, res) => {
+  res.json(downloadedFiles);
+});
+
+app.post("/downloaded", async (req, res) => {
+  const { fileId } = req.body;
+  downloadedFiles.push(fileId);
+  res.json({ fileId });
+});
+
 // make the final 404 route
 app.get("*", (req, res) => {
   res.send("404");
@@ -209,7 +225,7 @@ app.listen(TRACKER_PORT, () => {
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 console.log("Tracker CLI:");
@@ -218,7 +234,6 @@ console.log("- 1: Fetch all workers");
 console.log("- 2: Fetch all files");
 console.log("- 3: Fetch chunks for a file");
 console.log("- 4: Exit");
-
 
 rl.on("line", async (input) => {
   const [command] = input.trim().split(" ");
@@ -247,7 +262,9 @@ rl.on("line", async (input) => {
     case "3":
       rl.question("Enter the file ID to fetch chunks: ", async (fileId) => {
         try {
-          const { data } = await axios.get(`http://localhost:3000/files/${fileId}/chunks`);
+          const { data } = await axios.get(
+            `http://localhost:3000/files/${fileId}/chunks`
+          );
           console.log(`Chunks for file ${fileId}:`, data);
         } catch (error) {
           console.error("Error fetching file chunks:", error.message);
