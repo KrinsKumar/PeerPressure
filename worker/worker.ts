@@ -66,7 +66,7 @@ class Worker {
 
   private setupEventListeners() {
     this.server.on("connection", (socket) => {
-      console.log(`New connection on port ${this.port}`);
+      // console.log(`New connection on port ${this.port}`);
       socket.on(
         "store_chunk",
         (
@@ -340,7 +340,8 @@ class Worker {
           );
         });
         if (!chunk) {
-          console.error(`Chunk ${chunkId} of file ${fileId} not found`);
+          console.error(chalk.red(`Chunk ${chunkId} of file ${fileId} not found`));
+          // console.error(`Chunk ${chunkId} of file ${fileId} not found`);
           continue;
         }
         if (!FAIL_NOW) {
@@ -351,7 +352,7 @@ class Worker {
         if (chunkHashes[Number(chunkId)].includes(hash)) {
           correct_chunk = chunk;
           console.log(
-            `Chunk ${chunkId} of file ${fileId} retrieved successfully`
+          chalk.green(`${chunkId} : ${location} -> ${this.address}`)
           );
           break;
         }
@@ -564,17 +565,18 @@ class Worker {
           rl.close();
           break;
         default:
-          console.log(chalk.red("Unknown command:"), actualCommand);
-          console.log(chalk.cyan("Possible commands:"));
-          console.log(chalk.yellow("1: upload <file_path>") + " - Upload a file");
-          console.log(chalk.yellow("2: download <file_id> <output_path>") + " - Download a file");
-          console.log(chalk.yellow("3: list_chunks") + " - List all stored chunks");
-          console.log(chalk.yellow("4: list_files") + " - List all stored files");
-          console.log(chalk.yellow("5: exit") + " - Exit the worker");
-          console.log(chalk.yellow("6: upload_example_text") + " - Upload example text file");
-          console.log(chalk.yellow("7: upload_example_pic") + " - Upload example picture file");
-          console.log(chalk.yellow("8: upload_example_sound") + " - Upload example sound file");
-          console.log(chalk.yellow("9: upload_example_bulk") + " - Upload example bulk file");
+          console.log(chalk.red("❌ Unknown command:"), actualCommand);
+          console.log(chalk.cyan("🔍 Available commands:"));
+          console.log(chalk.yellow("1: upload <file_path>") + " - 📤 Upload a file");
+          console.log(chalk.yellow("2: download <file_id> <output_path>") + " - 📥 Download a file");
+          console.log(chalk.yellow("3: list_chunks") + " - 📊 List all stored chunks");
+          console.log(chalk.yellow("4: list_files") + " - 📋 List all stored files");
+          console.log(chalk.yellow("5: exit") + " - 👋 Exit the worker");
+          console.log(chalk.yellow("6: upload_example_text") + " - 📝 Upload example text file");
+          console.log(chalk.yellow("7: upload_example_pic") + " - 🖼️ Upload example picture file");
+          console.log(chalk.yellow("8: upload_example_sound") + " - 🎵 Upload example sound file");
+          console.log(chalk.yellow("9: upload_example_bulk") + " - 📦 Upload example bulk file");
+          console.log(chalk.cyan("Enter a number or command to proceed..."));
       }
     });
 

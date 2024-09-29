@@ -129,10 +129,10 @@ app.get("/files", async (req, res) => {
 app.post("/files/:id/chunks", async (req, res) => {
   let fileHash = req.params.id;
   let chunks;
-  console.log("Adding chunks", fileHash);
+  // console.log("Adding chunks", fileHash);
   try {
     chunks = req.body.chunk["fileId"];
-    console.log(chunks);
+    // console.log(chunks);
   } catch (e) {
     res.status(400).send("Please provide all the fields");
     return;
