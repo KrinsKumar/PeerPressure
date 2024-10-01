@@ -246,7 +246,7 @@ class Worker {
         console.error("Error sending chunk distribution to tracker:", error)
       );
 
-    console.log("Chunk hashes:", chunkHashes);
+    // console.log("Chunk hashes:", chunkHashes);c:\Users\pietr\AppData\Local\Packages\Microsoft.ScreenSketch_8wekyb3d8bbwe\TempState\Recordings\20241001-2010-10.7724664.mp4
     fetch(`${this.trackerAddress}/chunks/${fileId}/hash`, {
       method: "POST",
       headers: {
