@@ -57,7 +57,7 @@ setInterval(async () => {
       // 4. Ask it to pull the chunk
     }
   }
-}, 7000); 
+}, 10000); 
 
 // get all workers
 app.get("/worker", async (req, res) => {
